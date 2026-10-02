@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PB CivilLab — Redirecting...</title>
+    <script>
+      // Single Page App redirect for GitHub Pages
+      (function() {
+        var path = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        // Redirect back to root of this repo
+        var segments = path.split('/').filter(Boolean);
+        var repoName = segments.length > 0 ? '/' + segments[0] + '/' : '/';
+        window.location.replace(window.location.origin + repoName + (hash || ''));
+      })();
+    </script>
+  </head>
+  <body style="background-color: #070B12; color: #94A3B8; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+    <p>Redirecting to PB CivilLab...</p>
+  </body>
+</html>

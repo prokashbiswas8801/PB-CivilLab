@@ -1,0 +1,22 @@
+name: Feature or Calculator Proposal
+description: Suggest a new civil engineering calculation, code reference, or feature
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest an enhancement or new engineering tool for **PB CivilLab**.
+  - type: input
+    id: title
+    attributes:
+      label: Feature / Tool Title
+      placeholder: e.g. Prestressed Concrete Girder Loss Calculator
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Detailed Description & Engineering Formulation
+      description: Explain the engineering purpose, governing formulas, inputs, outputs, and applicable building codes (e.g. BNBC, ACI, IS, ASTM).
+    validations:
+      required: true

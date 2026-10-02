@@ -1,0 +1,8 @@
+{
+  "name": "PB CivilLab",
+  "description": "Civil Engineering Smart Toolkit & Calculator Web App by Prokash Biswas. Fast, transparent calculators for rebar, concrete, brickwork, surveying, unit conversions, and BOQ estimation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

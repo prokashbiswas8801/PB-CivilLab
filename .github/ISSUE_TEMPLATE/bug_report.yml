@@ -1,0 +1,44 @@
+name: Bug Report
+description: Report a calculation, unit, or UI issue in PB CivilLab
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue in **PB CivilLab**.
+        Please provide clear details to help reproduce and resolve the problem.
+  - type: input
+    id: calculator
+    attributes:
+      label: Affected Tool or Calculator
+      description: Which module had the issue? (e.g., Concrete Mix, Rebar Weight, BOQ, HI Leveling)
+      placeholder: e.g. Concrete Material Mix
+    validations:
+      required: true
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Input Values Used
+      description: What exact numbers, units, and parameters were entered?
+      placeholder: e.g. Length: 20 ft, Width: 10 ft, Mix: 1:2:4, Dry factor: 1.54
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What was the expected calculation result or behavior vs what occurred?
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser / Platform
+      options:
+        - Chrome / Edge (Desktop)
+        - Firefox (Desktop)
+        - Safari (macOS / iOS)
+        - Mobile Chrome (Android)
+        - Other
+    validations:
+      required: true
