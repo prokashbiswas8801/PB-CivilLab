@@ -11,8 +11,8 @@
         var hash = window.location.hash;
         // Redirect back to root of this repo
         var segments = path.split('/').filter(Boolean);
-        var repoName = segments.length > 0 ? '/' + segments[0] + '/' : '/';
-        window.location.replace(window.location.origin + repoName + (hash || ''));
+        var repoName = segments.length > 0 ? '/' + segments[0] : '';
+        window.location.replace(window.location.origin + repoName + '/docs/' + (hash || ''));
       })();
     </script>
   </head>

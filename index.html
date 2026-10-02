@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <script>
+      // 0. GitHub Pages Auto-Route: If deployed at root without /docs/, seamlessly route to /docs/
+      if (typeof window !== 'undefined' && window.location.hostname.endsWith('github.io') && !window.location.pathname.includes('/docs')) {
+        var p = window.location.pathname.replace(/\/+$/, '');
+        window.location.replace(p + '/docs/' + window.location.search + window.location.hash);
+      }
+    </script>
+    <script>
       // 1. Guard against environments where window.fetch has only a getter without a setter
       (function() {
         try {
