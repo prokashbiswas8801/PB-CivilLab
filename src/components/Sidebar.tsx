@@ -18,7 +18,6 @@ import {
   Ruler,
   TrendingDown,
   Hammer,
-  Bot,
   PanelLeftClose,
   PanelLeftOpen,
   History,
@@ -71,7 +70,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Overview',
       items: [
         { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-        { id: 'ai-advisor', name: 'AI Civil Advisor', icon: Bot },
         { id: 'favorites', name: `Favorites (${favorites.length})`, icon: Star },
       ],
     },

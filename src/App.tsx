@@ -19,7 +19,6 @@ import { GeometryCalculator } from './components/Calculators/GeometryCalculator'
 import { FeetInchCalculator } from './components/Calculators/FeetInchCalculator';
 import { FormulaLibraryView } from './components/FormulaLibraryView';
 import { ReferenceTablesView } from './components/ReferenceTablesView';
-import { AIAssistantModule } from './components/AIAssistantModule';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { SettingsModal } from './components/SettingsModal';
 import { DisclaimerModal } from './components/DisclaimerModal';
@@ -277,14 +276,6 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 history={history}
                 onOpenHistory={() => setIsHistoryOpen(true)}
-              />
-            )}
-
-            {activeView === 'ai-advisor' && (
-              <AIAssistantModule
-                settings={settings}
-                history={history}
-                onNavigateToTool={handleNavigate}
               />
             )}
 

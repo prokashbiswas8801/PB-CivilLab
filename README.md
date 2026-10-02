@@ -76,30 +76,20 @@ Unlike black-box calculators, PB CivilLab delivers **total mathematical transpar
 - **Quality Assurance Sign-Off Block**: Standard 3-signature verification area (*Prepared By*, *Checked By*, *Approved By*).
 - Exports clean, un-clipped physical prints and vector PDFs directly through browser print engines with zero external server dependencies.
 
-### 10. 🤖 AI Civil Engineering Advisor (Google Gemini Powered)
-- Server-side consultation on building code compliance, mix design audits, rebar detailing recommendations, and structural checks.
-- One-click **"Audit with AI"** on any active calculation result.
-
 ---
 
 ## 🔒 Security & Privacy Architecture
 
-PB CivilLab is built with a **strict local-first and zero-leak security architecture**:
+PB CivilLab is built with a **strict local-first, zero-leak security architecture**:
 
-1. **Zero Client-Side Secrets**: All third-party AI keys (`GEMINI_API_KEY`) remain strictly on the backend. The client bundle contains zero API keys or credentials.
-2. **Server-Side API Proxy & Input Sanitization**:
-   - HTTP method and content-type enforcement.
-   - Max payload size restricted to `256 KB`.
-   - Prompt length capped at `4,000 characters`.
-   - In-memory rate limiting ($30\text{ req/min}$ per IP) with `HTTP 429 Retry-After`.
-   - Sanitized errors: raw stack traces, file system paths, and internal exceptions are never exposed to the client.
-3. **Hardened HTTP Security Headers**:
+1. **100% Client-Side Deterministic Privacy**: All calculations run locally in the browser with zero external network dependencies or telemetry.
+2. **Hardened HTTP Security Headers**:
    - `X-Content-Type-Options: nosniff`
    - `X-Frame-Options: SAMEORIGIN`
    - `Referrer-Policy: strict-origin-when-cross-origin`
    - `X-XSS-Protection: 1; mode=block`
    - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-4. **Local Data Isolation**: All calculation history, favorites, custom units, and project settings reside strictly in the user's browser (`localStorage`). No project data is ever transmitted to remote databases.
+3. **Local Data Isolation**: All calculation history, favorites, custom units, and project settings reside strictly in the user's browser (`localStorage`). No project data is ever transmitted to remote servers.
 
 ---
 
@@ -109,8 +99,7 @@ PB CivilLab is built with a **strict local-first and zero-leak security architec
 | :--- | :--- |
 | **Frontend UI** | React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Plus Jakarta Sans, JetBrains Mono |
 | **Build Tooling** | Vite 8, ESBuild, PostCSS |
-| **Backend & Proxy** | Node.js, Express 4, TSX, Dotenv |
-| **AI Integration** | `@google/genai` TypeScript SDK (Model: `gemini-2.5-flash`) |
+| **Backend & Static Server** | Node.js, Express 4, TSX, Dotenv |
 | **Offline & PWA** | Web App Manifest, Service Worker Caching, Mobile Viewport Adaptations |
 
 ---
@@ -198,7 +187,7 @@ PB CivilLab includes a pre-compiled, relative-asset `/docs` folder for zero-conf
 2. Set Environment to **Node**.
 3. Set **Build Command**: `npm install && npm run build`
 4. Set **Start Command**: `npm start`
-5. Under Environment Variables, add `GEMINI_API_KEY` and `NODE_ENV=production`.
+5. Under Environment Variables, set `NODE_ENV=production`.
 
 ### Option C: Docker / Container
 A minimal Dockerfile for PB CivilLab:
@@ -225,7 +214,7 @@ CMD ["npm", "start"]
    gcloud run deploy pb-civillab \
      --image gcr.io/PROJECT_ID/pb-civillab \
      --platform managed \
-     --set-env-vars GEMINI_API_KEY=your_key,NODE_ENV=production \
+     --set-env-vars NODE_ENV=production \
      --allow-unauthenticated
    ```
 

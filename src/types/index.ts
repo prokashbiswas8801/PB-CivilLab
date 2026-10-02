@@ -10,8 +10,7 @@ export type ToolCategory =
   | 'structural'
   | 'estimation'
   | 'geometry'
-  | 'utilities'
-  | 'ai';
+  | 'utilities';
 
 export interface Tool {
   id: string;

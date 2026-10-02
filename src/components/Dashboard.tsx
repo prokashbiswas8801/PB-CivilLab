@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Cpu,
   ArrowRight,
-  Bot,
   Clock,
   Briefcase,
   History,
@@ -48,7 +47,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const categories: { id: ToolCategory; label: string }[] = [
     { id: 'all', label: 'All Tools' },
-    { id: 'ai', label: 'AI Advisor' },
     { id: 'converters', label: 'Unit Conversion' },
     { id: 'concrete', label: 'Concrete & Materials' },
     { id: 'rebar', label: 'RCC & Reinforcement' },
@@ -143,20 +141,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => onNavigate('ai-advisor')}
-                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/25"
-              >
-                <Bot className="w-4 h-4" />
-                <span>AI Civil Advisor</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => {
                   const el = document.getElementById('tools-catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/25"
               >
                 <span>Explore All Tools</span>
                 <ArrowRight className="w-4 h-4" />

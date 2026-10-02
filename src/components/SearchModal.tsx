@@ -5,7 +5,6 @@ import {
   ArrowRight,
   BookOpen,
   Calculator,
-  Sparkles,
   ArrowLeftRight,
   Clock,
   Star,
@@ -310,7 +309,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       case 'estimation': return 'Costing & BOQ';
       case 'geometry': return 'Surveying & Geometry';
       case 'converters': return 'Unit Conversions';
-      case 'ai': return 'AI Engineering Advisor';
       default: return 'Engineering Suite';
     }
   };
@@ -325,7 +323,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       case 'surveying': return <Compass className="w-4 h-4 text-cyan-400" />;
       case 'estimation': return <Hash className="w-4 h-4 text-cyan-400" />;
       case 'converters': return <ArrowLeftRight className="w-4 h-4 text-cyan-400" />;
-      case 'ai': return <Sparkles className="w-4 h-4 text-cyan-400" />;
       default: return <Calculator className="w-4 h-4 text-cyan-400" />;
     }
   };

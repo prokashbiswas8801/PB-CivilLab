@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, History, Settings, ShieldAlert, Star, Menu, Bot, Sparkles } from 'lucide-react';
+import { Search, History, Settings, ShieldAlert, Star, Menu } from 'lucide-react';
 import { AppSettings } from '../types';
 import { Logo } from './Logo';
 
@@ -59,15 +59,6 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
         >
           Dashboard
-        </button>
-        <button
-          onClick={() => onNavigate('ai-advisor')}
-          className={`hover:text-cyan-300 transition-colors flex items-center gap-1.5 ${
-            activeView === 'ai-advisor' ? 'text-cyan-400 font-bold' : 'text-cyan-400/90'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          AI Advisor
         </button>
         <button
           onClick={() => onNavigate('unit-converter')}

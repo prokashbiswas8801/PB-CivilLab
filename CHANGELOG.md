@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-10-02
+
+### Changed
+- **Deterministic 100% Client-Side Engine**: Removed external AI Advisor feature at user request to ensure complete offline reliability, zero external API key requirements, and instant performance across all network environments.
+- **Optimized Bundle Size**: Reduced JavaScript bundle size by over 26 KB and eliminated all external AI SDK dependencies (`@google/genai`).
+- **Static Hosting Hardening**: Streamlined repository for seamless zero-config GitHub Pages hosting with no server or API key overhead.
+
 ## [1.0.0] - 2026-10-01
 
 ### Added

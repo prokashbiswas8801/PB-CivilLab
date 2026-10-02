@@ -78,16 +78,6 @@ export const REGIONAL_PROFILES: Record<string, RegionalProfile> = {
 };
 
 export const TOOLS_CATALOG: Tool[] = [
-  // AI Civil Engineering Intelligence
-  {
-    id: 'ai-advisor',
-    name: 'AI Civil Engineering Advisor',
-    category: 'ai',
-    description: 'Direct consultation with Google Gemini for building code compliance (BNBC, ACI 318, IS 456, ASTM), mix designs, rebar detailing, and calculation audits.',
-    icon: 'Bot',
-    keywords: ['ai', 'gemini', 'assistant', 'consultant', 'code', 'bnbc', 'aci', 'audit', 'check', 'verify'],
-  },
-
   // Converters
   {
     id: 'unit-converter',
