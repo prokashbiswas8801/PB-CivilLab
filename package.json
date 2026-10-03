@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "start": "tsx server.ts",
     "build": "vite build && rm -rf docs && cp -r dist docs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
