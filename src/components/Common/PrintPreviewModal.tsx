@@ -1,67 +1,45 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * PB CivilLab — Professional Engineering Report & Print Preview Engine
+ * Author: Prokash Biswas | Calculate Smarter. Build Better.
+ *
+ * CRITICAL ARCHITECTURAL CONSTITUTION:
+ * 1. SINGLE SOURCE OF TRUTH:
+ *    Renders directly from the authoritative CalculationResult object.
+ *    Never recalculates values or intermediate variables.
+ * 2. ZERO FABRICATED DATA:
+ *    Defaults to 'Draft' status. No fake drawings or artificial approval statuses.
+ * 3. A4 PROFESSIONAL ENGINEERING CALCULATION SHEET:
+ *    Designed for technical submissions, client reviews, and jobsite documentation.
+ * 4. MULTI-FORMAT EXPORTS:
+ *    Print, Export PDF, Export CSV, Export Excel Spreadsheet.
+ */
+
+import React, { useState } from 'react';
 import {
   Printer,
   X,
   FileText,
-  Sliders,
-  Check,
-  ChevronDown,
-  Layers,
-  Settings,
-  ShieldCheck,
-  Eye,
   Download,
-  Maximize2,
-  Minimize2,
-  RefreshCw,
+  FileSpreadsheet,
+  Check,
+  ShieldCheck,
   Building2,
-  UserCheck,
-  PenTool,
+  Calendar,
+  Layers,
+  ChevronRight,
+  Maximize2,
+  Info,
 } from 'lucide-react';
-import { CalculationResult, AppSettings } from '../../types';
+import { CalculationResult, AppSettings, ReportProjectMeta, ReportStatus } from '../../types';
 import { Logo } from '../Logo';
-import { formatNumber } from '../../utils/units';
+import { generateCSVReport, downloadFile } from '../../utils/exportEngine';
 
-export interface PrintProjectMeta {
-  projectName?: string;
-  clientName?: string;
-  location?: string;
-  preparedBy?: string;
-  checkedBy?: string;
-  approvedBy?: string;
-  drawingRef?: string;
-  revision?: string;
-  documentNo?: string;
-  date?: string;
-}
-
-export interface PrintSettings {
-  pageSize: 'A4' | 'Letter' | 'Legal' | 'A3' | 'A5';
-  orientation: 'portrait' | 'landscape';
-  margins: 'normal' | 'narrow' | 'wide' | 'compact';
-  colorMode: 'full_color' | 'monochrome' | 'bw_pure';
-  scale: number; // 80, 90, 100
-  showLogo: boolean;
-  showProjectInfo: boolean;
-  showPrimaryResult: boolean;
-  showSecondaryTable: boolean;
-  showInputTable: boolean;
-  showFormula: boolean;
-  showBreakdown: boolean;
-  showAssumptions: boolean;
-  showEngineeringNotes: boolean;
-  showCodeReferences: boolean;
-  showSignOffBlock: boolean;
-  showFooter: boolean;
-  customTitle?: string;
-}
-
-interface PrintPreviewModalProps {
+export interface PrintPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   result: CalculationResult | null;
   settings: AppSettings;
-  initialProjectMeta?: PrintProjectMeta;
+  initialProjectMeta?: ReportProjectMeta;
   defaultOrientation?: 'portrait' | 'landscape';
 }
 
@@ -73,104 +51,116 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   initialProjectMeta,
   defaultOrientation = 'portrait',
 }) => {
-  // Stable document number generated once and preserved
-  const [docNumber] = useState<string>(() => {
+  // Generate a clean, stable document number (No fake office codes)
+  const [defaultDocNo] = useState<string>(() => {
     const year = new Date().getFullYear();
     const rand = Math.floor(100000 + Math.random() * 900000);
     return `PBCL-${year}-${rand}`;
   });
 
-  // Project Metadata State
-  const [projectMeta, setProjectMeta] = useState<PrintProjectMeta>(() => ({
-    projectName: initialProjectMeta?.projectName || 'General Civil Engineering Works',
-    clientName: initialProjectMeta?.clientName || 'Project Engineering Office',
-    location: initialProjectMeta?.location || 'Jobsite Headquarters',
-    preparedBy: initialProjectMeta?.preparedBy || 'Site Engineer',
-    checkedBy: initialProjectMeta?.checkedBy || 'Resident Engineer / Consultant',
-    approvedBy: initialProjectMeta?.approvedBy || 'Project Director',
-    drawingRef: initialProjectMeta?.drawingRef || 'DRG-STR-01',
-    revision: initialProjectMeta?.revision || 'Rev 0 (Approved For Construction)',
-    documentNo: initialProjectMeta?.documentNo || docNumber,
-    date: initialProjectMeta?.date || new Date().toLocaleDateString('en-US', {
-      year: 'numeric',
+  const [currentDate] = useState<string>(() => {
+    return new Date().toLocaleDateString('en-US', {
+      day: '2-digit',
       month: 'short',
-      day: 'numeric',
-    }),
-  }));
-
-  // Print Configuration Settings
-  const [printSettings, setPrintSettings] = useState<PrintSettings>({
-    pageSize: 'A4',
-    orientation: defaultOrientation,
-    margins: 'normal',
-    colorMode: 'full_color',
-    scale: 100,
-    showLogo: true,
-    showProjectInfo: true,
-    showPrimaryResult: true,
-    showSecondaryTable: true,
-    showInputTable: true,
-    showFormula: true,
-    showBreakdown: true,
-    showAssumptions: true,
-    showEngineeringNotes: true,
-    showCodeReferences: true,
-    showSignOffBlock: true,
-    showFooter: true,
-    customTitle: result?.title || 'Civil Engineering Calculation Sheet',
+      year: 'numeric',
+    });
   });
 
-  // Keep custom title in sync when result changes
-  useEffect(() => {
-    if (result?.title) {
-      setPrintSettings(prev => ({
-        ...prev,
-        customTitle: prev.customTitle || result.title,
-      }));
-    }
-  }, [result]);
+  // Project Metadata State — ZERO FABRICATION (all optional fields empty by default)
+  const [projectMeta, setProjectMeta] = useState<ReportProjectMeta>(() => ({
+    projectName: initialProjectMeta?.projectName || '',
+    projectId: initialProjectMeta?.projectId || '',
+    client: initialProjectMeta?.client || '',
+    contractor: initialProjectMeta?.contractor || '',
+    consultant: initialProjectMeta?.consultant || '',
+    location: initialProjectMeta?.location || '',
+    drawingNumber: initialProjectMeta?.drawingNumber || '',
+    drawingRevision: initialProjectMeta?.drawingRevision || '',
+    documentNumber: initialProjectMeta?.documentNumber || defaultDocNo,
+    calculationReference: initialProjectMeta?.calculationReference || '',
+    preparedBy: initialProjectMeta?.preparedBy || '',
+    checkedBy: initialProjectMeta?.checkedBy || '',
+    approvedBy: initialProjectMeta?.approvedBy || '',
+    reportStatus: initialProjectMeta?.reportStatus || 'Draft',
+    date: initialProjectMeta?.date || currentDate,
+    showEmptyFields: initialProjectMeta?.showEmptyFields || false,
+  }));
 
-  const [activeTab, setActiveTab] = useState<'preview' | 'settings'>('preview');
+  // Layout & Section toggles
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(defaultOrientation);
+  const [margin, setMargin] = useState<'normal' | 'compact'>('normal');
+  const [showProjectInfo, setShowProjectInfo] = useState<boolean>(true);
+  const [showCalculationTrace, setShowCalculationTrace] = useState<boolean>(true);
+  const [showEngineeringBasis, setShowEngineeringBasis] = useState<boolean>(true);
+  const [showEngineeringNotes, setShowEngineeringNotes] = useState<boolean>(true);
+  const [showVerification, setShowVerification] = useState<boolean>(true);
+  const [customReportTitle, setCustomReportTitle] = useState<string>('');
+
+  const [activeTab, setActiveTab] = useState<'preview' | 'meta'>('preview');
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   if (!isOpen || !result) return null;
 
-  // Execute Native Print
+  const reportTitle = customReportTitle.trim() || result.title;
+  const status = projectMeta.reportStatus || 'Draft';
+
+  // Handle Browser Native Print (which uses our @media print stylesheet)
   const handlePrint = () => {
     window.print();
   };
 
-  // Dynamic CSS variables according to selected margins and scale
-  const getMarginClass = () => {
-    switch (printSettings.margins) {
-      case 'narrow': return 'p-4 sm:p-6';
-      case 'wide': return 'p-8 sm:p-12';
-      case 'compact': return 'p-3 sm:p-4';
-      default: return 'p-6 sm:p-8';
-    }
+  // Handle Export PDF workflow
+  const handleExportPDF = () => {
+    setExportNotice('Opening system print dialog — select "Save as PDF" to generate an official vector A4 PDF.');
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setExportNotice(null), 3000);
+    }, 400);
   };
 
-  const getColorModeClasses = () => {
-    switch (printSettings.colorMode) {
-      case 'monochrome':
-        return 'filter grayscale text-black bg-white';
-      case 'bw_pure':
-        return 'filter contrast-150 grayscale text-black bg-white';
-      default:
-        return 'text-slate-900 bg-white';
-    }
+  // Handle CSV Export (Single source of truth)
+  const handleExportCSV = () => {
+    const csvContent = generateCSVReport(result, projectMeta);
+    const safeTitle = reportTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const filename = `${safeTitle}_${projectMeta.documentNumber || 'report'}.csv`;
+    downloadFile(csvContent, filename, 'text/csv');
+    setExportNotice(`Downloaded CSV Report: ${filename}`);
+    setTimeout(() => setExportNotice(null), 3000);
   };
 
-  // Engineering code profile badge
-  const codeProfileName = settings.regionalProfile?.name || 'BNBC 2020 / ACI 318 Standard';
-  const engineeringStatus = result.isPreliminary ? 'PRELIMINARY ESTIMATE' : 'CODE-REFERENCED CALCULATION';
+  // Handle Excel Spreadsheet Export (CSV with UTF-8 BOM for flawless characters)
+  const handleExportExcel = () => {
+    const csvContent = '\uFEFF' + generateCSVReport(result, projectMeta);
+    const safeTitle = reportTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const filename = `${safeTitle}_${projectMeta.documentNumber || 'report'}.csv`;
+    downloadFile(csvContent, filename, 'application/vnd.ms-excel');
+    setExportNotice(`Downloaded Excel Spreadsheet: ${filename}`);
+    setTimeout(() => setExportNotice(null), 3000);
+  };
+
+  // Project information populated items
+  const projectInfoFields = [
+    { label: 'Project Name', value: projectMeta.projectName },
+    { label: 'Project ID', value: projectMeta.projectId },
+    { label: 'Client / Owner', value: projectMeta.client },
+    { label: 'Contractor', value: projectMeta.contractor },
+    { label: 'Consultant', value: projectMeta.consultant },
+    { label: 'Jobsite Location', value: projectMeta.location },
+    { label: 'Drawing Number', value: projectMeta.drawingNumber },
+    { label: 'Drawing Revision', value: projectMeta.drawingRevision },
+    { label: 'Calculation Ref', value: projectMeta.calculationReference },
+  ];
+
+  const visibleProjectFields = projectMeta.showEmptyFields
+    ? projectInfoFields.map(f => ({ ...f, value: f.value || 'Not specified' }))
+    : projectInfoFields.filter(f => Boolean(f.value));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
-      {/* Container Dialog */}
-      <div className="w-full max-w-6xl h-[95vh] rounded-2xl border border-white/15 bg-[#0B0F19] shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-6xl h-[95vh] rounded-2xl border border-white/15 bg-[#0B0F19] shadow-2xl flex flex-col overflow-hidden text-slate-100">
         
-        {/* Header Toolbar (No Print) */}
-        <div className="px-4 sm:px-6 py-3 border-b border-white/10 bg-[#111827] flex items-center justify-between gap-4 no-print shrink-0">
+        {/* HEADER TOOLBAR (Excluded in print) */}
+        <div className="px-4 sm:px-6 py-3 border-b border-white/10 bg-[#111827] flex items-center justify-between gap-3 no-print shrink-0 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
               <FileText className="w-5 h-5" />
@@ -178,21 +168,21 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white tracking-wide">
-                  PB CivilLab Engineering Report Engine
+                  PB CivilLab Engineering Calculation Sheet
                 </h3>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold">
-                  Print & PDF Preview
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold uppercase">
+                  A4 Print & Export
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-mono">
-                Doc Ref: {projectMeta.documentNo} · {printSettings.pageSize} {printSettings.orientation}
+                Doc Ref: {projectMeta.documentNumber} · Status: <span className="font-bold text-slate-200">{status}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* View Mode Toggle */}
-            <div className="hidden sm:flex rounded-lg border border-white/10 bg-[#151C2B] p-0.5 text-xs font-semibold">
+            <div className="flex rounded-lg border border-white/10 bg-[#151C2B] p-0.5 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
@@ -200,207 +190,317 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   activeTab === 'preview' ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Preview Document
+                Sheet Preview
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('settings')}
+                onClick={() => setActiveTab('meta')}
                 className={`px-3 py-1 rounded-md transition-colors ${
-                  activeTab === 'settings' ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white'
+                  activeTab === 'meta' ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Options & Fields
+                Project Details
               </button>
             </div>
 
-            {/* Direct Print / PDF Button */}
+            {/* Export Actions */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-200 transition-colors flex items-center gap-1.5"
+              title="Export raw calculated data as CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden sm:inline">CSV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+              title="Export structured data for Microsoft Excel / Google Sheets"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportPDF}
+              className="px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 text-xs font-bold transition-colors flex items-center gap-1.5"
+              title="Export selectable-text vector PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Export PDF</span>
+            </button>
+
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/25 transition-all active:scale-95 cursor-pointer"
-              title="Open browser print dialog to Print or Save as PDF"
+              className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-cyan-500/25 transition-all active:scale-95"
+              title="Print document on physical printer or PDF printer"
             >
               <Printer className="w-4 h-4" />
-              <span>Print / Save as PDF</span>
+              <span>Print</span>
             </button>
 
-            {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-              aria-label="Close Print Preview"
+              className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors ml-1"
+              aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Main Body: Dual-Pane Interface */}
+        {/* NOTIFICATION BANNER */}
+        {exportNotice && (
+          <div className="px-4 py-2 bg-cyan-500/10 border-b border-cyan-500/20 text-xs text-cyan-300 flex items-center justify-between no-print">
+            <span className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-cyan-400" />
+              <span>{exportNotice}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setExportNotice(null)}
+              className="text-cyan-400 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* MAIN BODY: OPTIONS PANE + WYSIWYG SHEET */}
         <div className="flex-1 flex overflow-hidden">
           
-          {/* LEFT PANE: Options & Metadata Controls (Scrollable) */}
-          <div className="w-80 lg:w-96 border-r border-white/10 bg-[#0F172A] p-4 overflow-y-auto space-y-5 text-xs text-slate-300 shrink-0 no-print">
+          {/* LEFT SIDEBAR: Report Configuration & Metadata Inputs */}
+          <div className="w-80 lg:w-96 border-r border-white/10 bg-[#0F172A] p-4 overflow-y-auto space-y-4 text-xs text-slate-300 shrink-0 no-print">
             
-            {/* Quick Layout Selectors */}
-            <div className="space-y-3">
+            {/* Sheet Orientation & Layout */}
+            <div className="space-y-2">
               <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 block tracking-wider">
-                Page & Layout Settings
+                Document Formatting (A4)
               </span>
-              
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Page Format</label>
-                  <select
-                    value={printSettings.pageSize}
-                    onChange={e => setPrintSettings({ ...printSettings, pageSize: e.target.value as any })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500/50"
-                  >
-                    <option value="A4">A4 (210 × 297 mm)</option>
-                    <option value="Letter">Letter (8.5 × 11 in)</option>
-                    <option value="Legal">Legal (8.5 × 14 in)</option>
-                    <option value="A3">A3 (297 × 420 mm)</option>
-                    <option value="A5">A5 (148 × 210 mm)</option>
-                  </select>
-                </div>
-
                 <div>
                   <label className="text-[10px] text-slate-400 block mb-1">Orientation</label>
                   <select
-                    value={printSettings.orientation}
-                    onChange={e => setPrintSettings({ ...printSettings, orientation: e.target.value as any })}
+                    value={orientation}
+                    onChange={e => setOrientation(e.target.value as any)}
                     className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   >
-                    <option value="portrait">Portrait</option>
-                    <option value="landscape">Landscape</option>
+                    <option value="portrait">Portrait (A4)</option>
+                    <option value="landscape">Landscape (A4)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[10px] text-slate-400 block mb-1">Margins</label>
                   <select
-                    value={printSettings.margins}
-                    onChange={e => setPrintSettings({ ...printSettings, margins: e.target.value as any })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                    value={margin}
+                    onChange={e => setMargin(e.target.value as any)}
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   >
                     <option value="normal">Normal (15 mm)</option>
-                    <option value="narrow">Narrow (8 mm)</option>
-                    <option value="wide">Wide (22 mm)</option>
-                    <option value="compact">Compact (5 mm)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Ink Mode</label>
-                  <select
-                    value={printSettings.colorMode}
-                    onChange={e => setPrintSettings({ ...printSettings, colorMode: e.target.value as any })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
-                  >
-                    <option value="full_color">Technical Full Color</option>
-                    <option value="monochrome">Grayscale / Monochrome</option>
-                    <option value="bw_pure">Pure Black & White</option>
+                    <option value="compact">Compact (10 mm)</option>
                   </select>
                 </div>
               </div>
-            </div>
-
-            {/* Document Header & Title Customization */}
-            <div className="space-y-3 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 block tracking-wider">
-                Document Identification
-              </span>
 
               <div>
-                <label className="text-[10px] text-slate-400 block mb-1">Custom Report Title</label>
-                <input
-                  type="text"
-                  value={printSettings.customTitle}
-                  onChange={e => setPrintSettings({ ...printSettings, customTitle: e.target.value })}
-                  placeholder="e.g. Ground Floor RCC Slab Concrete Estimate"
-                  className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-cyan-500/50 font-sans"
-                />
+                <label className="text-[10px] text-slate-400 block mb-1">Document Status</label>
+                <select
+                  value={status}
+                  onChange={e => setProjectMeta({ ...projectMeta, reportStatus: e.target.value as ReportStatus })}
+                  className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-500/50 font-mono"
+                >
+                  <option value="Draft">Draft (Standard Default)</option>
+                  <option value="For Review">For Review</option>
+                  <option value="Checked">Checked</option>
+                  <option value="Approved">Approved</option>
+                  <option value="For Construction">For Construction</option>
+                  <option value="As-Built">As-Built</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Document Ref #</label>
-                  <input
-                    type="text"
-                    value={projectMeta.documentNo}
-                    onChange={e => setProjectMeta({ ...projectMeta, documentNo: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Revision</label>
-                  <input
-                    type="text"
-                    value={projectMeta.revision}
-                    onChange={e => setProjectMeta({ ...projectMeta, revision: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Project Workspace Information */}
-            <div className="space-y-3 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 block tracking-wider">
-                Project Information (Jobsite)
-              </span>
 
               <div>
-                <label className="text-[10px] text-slate-400 block mb-1">Project Name</label>
+                <label className="text-[10px] text-slate-400 block mb-1">Report Title Override</label>
                 <input
                   type="text"
-                  value={projectMeta.projectName}
-                  onChange={e => setProjectMeta({ ...projectMeta, projectName: e.target.value })}
-                  placeholder="e.g. Residential Tower Block-A"
+                  value={customReportTitle}
+                  onChange={e => setCustomReportTitle(e.target.value)}
+                  placeholder={result.title}
                   className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
+            </div>
+
+            {/* Project Metadata Section */}
+            <div className="space-y-2 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 tracking-wider">
+                  Project Information (Optional)
+                </span>
+                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={projectMeta.showEmptyFields}
+                    onChange={e => setProjectMeta({ ...projectMeta, showEmptyFields: e.target.checked })}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Show empty</span>
+                </label>
+              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Client / Owner</label>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Project Name</label>
                   <input
                     type="text"
-                    value={projectMeta.clientName}
-                    onChange={e => setProjectMeta({ ...projectMeta, clientName: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    value={projectMeta.projectName}
+                    onChange={e => setProjectMeta({ ...projectMeta, projectName: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Job Location</label>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Project ID</label>
+                  <input
+                    type="text"
+                    value={projectMeta.projectId}
+                    onChange={e => setProjectMeta({ ...projectMeta, projectId: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Client / Owner</label>
+                  <input
+                    type="text"
+                    value={projectMeta.client}
+                    onChange={e => setProjectMeta({ ...projectMeta, client: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Jobsite Location</label>
                   <input
                     type="text"
                     value={projectMeta.location}
                     onChange={e => setProjectMeta({ ...projectMeta, location: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Prepared By (Engineer)</label>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Contractor</label>
                   <input
                     type="text"
-                    value={projectMeta.preparedBy}
-                    onChange={e => setProjectMeta({ ...projectMeta, preparedBy: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    value={projectMeta.contractor}
+                    onChange={e => setProjectMeta({ ...projectMeta, contractor: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Checked By (Quality)</label>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Consultant</label>
+                  <input
+                    type="text"
+                    value={projectMeta.consultant}
+                    onChange={e => setProjectMeta({ ...projectMeta, consultant: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Drawing No</label>
+                  <input
+                    type="text"
+                    value={projectMeta.drawingNumber}
+                    onChange={e => setProjectMeta({ ...projectMeta, drawingNumber: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Revision</label>
+                  <input
+                    type="text"
+                    value={projectMeta.drawingRevision}
+                    onChange={e => setProjectMeta({ ...projectMeta, drawingRevision: e.target.value })}
+                    placeholder="Not specified"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Document No</label>
+                  <input
+                    type="text"
+                    value={projectMeta.documentNumber}
+                    onChange={e => setProjectMeta({ ...projectMeta, documentNumber: e.target.value })}
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Date</label>
+                  <input
+                    type="text"
+                    value={projectMeta.date}
+                    onChange={e => setProjectMeta({ ...projectMeta, date: e.target.value })}
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quality Sign-Off Block Inputs */}
+            <div className="space-y-2 pt-3 border-t border-white/10">
+              <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 block tracking-wider">
+                Sign-Off / Verification
+              </span>
+              <div>
+                <label className="text-[10px] text-slate-400 block mb-0.5">Prepared By</label>
+                <input
+                  type="text"
+                  value={projectMeta.preparedBy}
+                  onChange={e => setProjectMeta({ ...projectMeta, preparedBy: e.target.value })}
+                  placeholder="e.g. Engr. Prokash Biswas"
+                  className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Checked By</label>
                   <input
                     type="text"
                     value={projectMeta.checkedBy}
                     onChange={e => setProjectMeta({ ...projectMeta, checkedBy: e.target.value })}
-                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    placeholder="Leave blank if pending"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400 block mb-0.5">Approved By</label>
+                  <input
+                    type="text"
+                    value={projectMeta.approvedBy}
+                    onChange={e => setProjectMeta({ ...projectMeta, approvedBy: e.target.value })}
+                    placeholder="Leave blank if pending"
+                    className="w-full rounded-lg border border-white/10 bg-[#151C2B] p-1.5 text-xs text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   />
                 </div>
               </div>
@@ -411,165 +511,214 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               <span className="text-[11px] font-mono uppercase font-bold text-cyan-400 block tracking-wider">
                 Include / Exclude Sections
               </span>
-
-              <div className="space-y-1.5">
-                {[
-                  { key: 'showLogo', label: 'Official Header & PB CivilLab Logo' },
-                  { key: 'showProjectInfo', label: 'Project Metadata & Site Details' },
-                  { key: 'showPrimaryResult', label: 'Primary Result Highlight Box' },
-                  { key: 'showSecondaryTable', label: 'Computed Secondary Quantities Table' },
-                  { key: 'showInputTable', label: 'Specified Field Input Parameters Table' },
-                  { key: 'showFormula', label: 'Governing Formula & Substituted Math' },
-                  { key: 'showBreakdown', label: 'Step-by-Step Calculation Breakdown' },
-                  { key: 'showAssumptions', label: 'Design Assumptions & Material Factors' },
-                  { key: 'showEngineeringNotes', label: 'Jobsite Practical Notes & Tips' },
-                  { key: 'showCodeReferences', label: 'Building Code & Standards Compliance' },
-                  { key: 'showSignOffBlock', label: 'Quality Assurance Sign-Off Block' },
-                  { key: 'showFooter', label: 'Document Footer & Timestamp' },
-                ].map(item => (
-                  <label
-                    key={item.key}
-                    className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={(printSettings as any)[item.key]}
-                      onChange={e => setPrintSettings({ ...printSettings, [item.key]: e.target.checked })}
-                      className="rounded border-white/20 bg-[#151C2B] text-cyan-500 focus:ring-0 focus:ring-offset-0"
-                    />
-                    <span className="text-slate-300 text-xs">{item.label}</span>
-                  </label>
-                ))}
+              <div className="space-y-1 text-xs">
+                <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5">
+                  <input
+                    type="checkbox"
+                    checked={showProjectInfo}
+                    onChange={e => setShowProjectInfo(e.target.checked)}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Project Information Section</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5">
+                  <input
+                    type="checkbox"
+                    checked={showCalculationTrace}
+                    onChange={e => setShowCalculationTrace(e.target.checked)}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Mathematical Calculation Trace</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5">
+                  <input
+                    type="checkbox"
+                    checked={showEngineeringBasis}
+                    onChange={e => setShowEngineeringBasis(e.target.checked)}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Engineering Basis & References</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5">
+                  <input
+                    type="checkbox"
+                    checked={showEngineeringNotes}
+                    onChange={e => setShowEngineeringNotes(e.target.checked)}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Practical Jobsite Notes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-white/5">
+                  <input
+                    type="checkbox"
+                    checked={showVerification}
+                    onChange={e => setShowVerification(e.target.checked)}
+                    className="rounded border-white/20 bg-[#151C2B] text-cyan-500"
+                  />
+                  <span>Verification Sign-Off Block</span>
+                </label>
               </div>
             </div>
           </div>
 
-          {/* RIGHT PANE: WYSIWYG Live Sheet Preview (Scrollable Canvas) */}
-          <div className="flex-1 bg-[#070B12] p-4 sm:p-8 overflow-y-auto flex justify-center">
+          {/* RIGHT CANVAS: A4 CALCULATION SHEET (WYSIWYG & PRINTABLE TARGET) */}
+          <div className="flex-1 bg-[#070B12] p-4 sm:p-6 lg:p-8 overflow-y-auto flex justify-center">
             
-            {/* The Physical Paper Preview Container */}
+            {/* The Print Sheet Target Container */}
             <div
               id="pb-civillab-printable-sheet"
               className={`w-full ${
-                printSettings.orientation === 'landscape' ? 'max-w-5xl' : 'max-w-4xl'
-              } shadow-2xl rounded-sm border border-slate-300 transition-all font-sans print-sheet ${getColorModeClasses()} ${getMarginClass()}`}
+                orientation === 'landscape' ? 'max-w-5xl' : 'max-w-3xl'
+              } bg-white text-slate-900 shadow-2xl rounded-sm border border-slate-300 font-sans print-sheet ${
+                margin === 'compact' ? 'p-6 sm:p-8' : 'p-8 sm:p-12'
+              }`}
               style={{
-                minHeight: printSettings.orientation === 'landscape' ? '210mm' : '297mm',
+                minHeight: orientation === 'landscape' ? '210mm' : '297mm',
               }}
             >
-              {/* 1. Official Header & Logo */}
-              {printSettings.showLogo && (
-                <div className="border-b-2 border-black pb-3 mb-4 flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-wood text-3xl font-extrabold text-black tracking-tight">
-                        PB CivilLab
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 border border-black font-mono font-bold uppercase tracking-wider bg-gray-50 text-black">
-                        Engineering Calculation Sheet
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-800 mt-1 font-semibold">
-                      Civil Engineering Smart Toolkit · Prokash Biswas · Calculate Smarter. Build Better.
-                    </p>
-                    <p className="text-[11px] text-gray-600 font-mono mt-0.5">
-                      Standard Code Profile: <strong>{codeProfileName}</strong>
-                    </p>
-                  </div>
-
-                  <div className="text-right text-xs space-y-1">
-                    <div className="border-2 border-black px-3 py-1 font-mono text-center bg-gray-50">
-                      <span className="block text-[9px] uppercase tracking-wider text-gray-600 font-bold">Document Number</span>
-                      <strong className="text-xs text-black">{projectMeta.documentNo}</strong>
-                    </div>
-                    <div className="text-[10px] text-gray-600 font-mono">
-                      Date: {projectMeta.date}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Document Title Banner */}
-              <div className="mb-4 pb-2 border-b border-gray-300 flex items-center justify-between">
+              {/* 1. OFFICIAL ENGINEERING HEADER */}
+              <div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between break-inside-avoid">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold font-sans text-black tracking-tight leading-tight">
-                    {printSettings.customTitle || result.title}
-                  </h1>
-                  <span className="text-xs font-mono font-medium text-gray-600">
-                    Module: {result.title}
-                  </span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-wood text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                      PB CivilLab
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 border border-slate-900 font-mono font-bold uppercase tracking-wider bg-slate-100 text-slate-900">
+                      Civil Engineering Smart Toolkit
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-1 font-medium">
+                    Civil Engineering Calculation Sheet · Prokash Biswas · Calculate Smarter. Build Better.
+                  </p>
                 </div>
 
-                <span className="text-[10px] font-mono font-extrabold px-2.5 py-1 border border-black uppercase tracking-wider text-black bg-gray-100">
-                  {engineeringStatus}
-                </span>
+                <div className="text-right text-xs space-y-1">
+                  <div className="border-2 border-slate-900 px-3 py-1 font-mono text-center bg-slate-50">
+                    <span className="block text-[9px] uppercase tracking-wider text-slate-600 font-bold">
+                      Document No
+                    </span>
+                    <strong className="text-xs text-slate-900">{projectMeta.documentNumber}</strong>
+                  </div>
+                  <div className="text-[10px] text-slate-600 font-mono">
+                    Date: {projectMeta.date}
+                  </div>
+                </div>
               </div>
 
-              {/* 2. Project Metadata Bar */}
-              {printSettings.showProjectInfo && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border border-black p-2.5 mb-4 text-xs bg-gray-50 break-inside-avoid">
-                  <div>
-                    <span className="block text-[9px] uppercase font-bold text-gray-600">Project</span>
-                    <span className="font-bold text-black truncate block">{projectMeta.projectName}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase font-bold text-gray-600">Client</span>
-                    <span className="font-medium text-black truncate block">{projectMeta.clientName}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase font-bold text-gray-600">Location</span>
-                    <span className="font-medium text-black truncate block">{projectMeta.location}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[9px] uppercase font-bold text-gray-600">Drawing / Revision</span>
-                    <span className="font-mono text-black truncate block">{projectMeta.drawingRef} ({projectMeta.revision})</span>
-                  </div>
+              {/* 2. CALCULATION TITLE & STATUS BANNER */}
+              <div className="mb-4 pb-2 border-b border-slate-300 flex items-center justify-between break-inside-avoid">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block font-mono">
+                    Calculation Type
+                  </span>
+                  <h1 className="text-xl sm:text-2xl font-bold font-sans text-slate-950 tracking-tight leading-tight">
+                    {reportTitle}
+                  </h1>
                 </div>
-              )}
 
-              {/* 3. Primary Result Highlight Box */}
-              {printSettings.showPrimaryResult && (
-                <div className="border-2 border-black p-4 mb-4 bg-gray-100 flex items-center justify-between break-inside-avoid">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700 block">
-                      Primary Engineering Output Quantity
-                    </span>
-                    <div className="text-3xl font-extrabold font-mono text-black mt-1">
-                      {result.primaryValue} <span className="text-xl font-bold">{result.primaryUnit}</span>
-                    </div>
-                    {result.secondaryValues && result.secondaryValues.length > 0 && (
-                      <p className="text-xs text-gray-700 font-mono mt-1">
-                        Equivalent Reference: {result.secondaryValues[0].label} = {result.secondaryValues[0].value} {result.secondaryValues[0].unit || ''}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="border-l border-gray-400 pl-4 text-right text-xs space-y-1">
-                    <span className="block text-[10px] uppercase text-gray-600 font-bold">Precision</span>
-                    <span className="font-mono font-bold text-black">{settings.decimalPrecision ?? 2} Decimals</span>
-                    <span className="block text-[9px] text-gray-500 font-mono">Unit Category: {result.primaryCategory || 'General'}</span>
-                  </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block font-mono">
+                    Document Status
+                  </span>
+                  <span className={`text-xs font-mono font-bold px-2.5 py-0.5 border uppercase tracking-wider ${
+                    status === 'Approved' || status === 'For Construction'
+                      ? 'border-emerald-800 bg-emerald-50 text-emerald-900'
+                      : status === 'For Review' || status === 'Checked'
+                      ? 'border-sky-800 bg-sky-50 text-sky-900'
+                      : 'border-slate-800 bg-slate-100 text-slate-900'
+                  }`}>
+                    {status}
+                  </span>
                 </div>
-              )}
+              </div>
 
-              {/* 4. Secondary Computed Quantities Table */}
-              {printSettings.showSecondaryTable && result.secondaryValues && result.secondaryValues.length > 0 && (
+              {/* 3. PROJECT INFORMATION SECTION */}
+              {showProjectInfo && visibleProjectFields.length > 0 && (
                 <div className="mb-4 break-inside-avoid">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-1 mb-2">
-                    Computed Output Quantities & Secondary Breakdown
-                  </h4>
-                  <table className="w-full text-xs border border-collapse border-black">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
+                    Project Information
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border border-slate-300 p-2.5 text-xs bg-slate-50/70">
+                    {visibleProjectFields.map((field, idx) => (
+                      <div key={idx} className="truncate">
+                        <span className="block text-[9px] uppercase font-bold text-slate-500">
+                          {field.label}
+                        </span>
+                        <span className="font-semibold text-slate-900 truncate block">
+                          {field.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. INPUT PARAMETERS TABLE */}
+              {result.inputsSummary && result.inputsSummary.length > 0 && (
+                <div className="mb-4 break-inside-avoid">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
+                    Specified Input Parameters
+                  </h3>
+                  <table className="w-full text-xs border border-collapse border-slate-800">
                     <thead>
-                      <tr className="bg-gray-100 border-b border-black">
-                        <th className="p-1.5 text-left border-r border-black font-bold text-black">Item / Output Description</th>
-                        <th className="p-1.5 text-right font-bold text-black">Computed Value</th>
+                      <tr className="bg-slate-100 border-b border-slate-800">
+                        <th className="p-1.5 text-left border-r border-slate-800 font-bold text-slate-900">Parameter Description</th>
+                        <th className="p-1.5 text-right font-bold text-slate-900">Specified Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.inputsSummary.map((inp, idx) => (
+                        <tr key={idx} className="border-b border-slate-300">
+                          <td className="p-1.5 border-r border-slate-800 font-medium text-slate-900">{inp.label}</td>
+                          <td className="p-1.5 text-right font-mono font-bold text-slate-900">{inp.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 5. PRIMARY ENGINEERING RESULT HIGHLIGHT BOX */}
+              <div className="border-2 border-slate-900 p-4 mb-4 bg-slate-100 flex items-center justify-between break-inside-avoid">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">
+                    Primary Engineering Output Quantity
+                  </span>
+                  <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-950 mt-1 tracking-tight">
+                    {result.primaryValue} <span className="text-xl font-bold">{result.primaryUnit}</span>
+                  </div>
+                  {result.secondaryValues && result.secondaryValues.length > 0 && (
+                    <p className="text-xs text-slate-700 font-mono mt-1 font-semibold">
+                      {result.secondaryValues[0].label}: {result.secondaryValues[0].value} {result.secondaryValues[0].unit || ''}
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-l border-slate-400 pl-4 text-right text-xs space-y-1">
+                  <span className="block text-[10px] uppercase text-slate-600 font-bold">Standard Precision</span>
+                  <span className="font-mono font-bold text-slate-900">{settings.decimalPrecision ?? 2} Decimals</span>
+                  <span className="block text-[9px] text-slate-500 font-mono">Category: {result.primaryCategory || 'General'}</span>
+                </div>
+              </div>
+
+              {/* 6. CALCULATED OUTPUTS TABLE */}
+              {result.secondaryValues && result.secondaryValues.length > 0 && (
+                <div className="mb-4 break-inside-avoid">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
+                    Calculated Outputs & Secondary Quantities
+                  </h3>
+                  <table className="w-full text-xs border border-collapse border-slate-800">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-800">
+                        <th className="p-1.5 text-left border-r border-slate-800 font-bold text-slate-900">Output Item</th>
+                        <th className="p-1.5 text-right font-bold text-slate-900">Computed Result</th>
                       </tr>
                     </thead>
                     <tbody>
                       {result.secondaryValues.map((sec, idx) => (
-                        <tr key={idx} className="border-b border-gray-300">
-                          <td className="p-1.5 border-r border-black font-medium text-black">{sec.label}</td>
-                          <td className="p-1.5 text-right font-mono font-bold text-black">
+                        <tr key={idx} className="border-b border-slate-300">
+                          <td className="p-1.5 border-r border-slate-800 font-medium text-slate-900">{sec.label}</td>
+                          <td className="p-1.5 text-right font-mono font-bold text-slate-950">
                             {sec.value} {sec.unit || ''}
                           </td>
                         </tr>
@@ -579,134 +728,118 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 </div>
               )}
 
-              {/* 5. Specified Field Input Parameters Table */}
-              {printSettings.showInputTable && result.inputsSummary && result.inputsSummary.length > 0 && (
+              {/* 7. CALCULATION TRACE (MATHEMATICAL PRESENTATION) */}
+              {showCalculationTrace && (result.calculationTrace || result.breakdown) && (
                 <div className="mb-4 break-inside-avoid">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-1 mb-2">
-                    Specified Field Input Parameters & Site Dimensions
-                  </h4>
-                  <table className="w-full text-xs border border-collapse border-black">
-                    <thead>
-                      <tr className="bg-gray-100 border-b border-black">
-                        <th className="p-1.5 text-left border-r border-black font-bold text-black">Parameter Description</th>
-                        <th className="p-1.5 text-right font-bold text-black">Specified Value & Units</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.inputsSummary.map((inp, idx) => (
-                        <tr key={idx} className="border-b border-gray-300">
-                          <td className="p-1.5 border-r border-black text-black">{inp.label}</td>
-                          <td className="p-1.5 text-right font-mono font-bold text-black">{inp.value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* 6. Governing Formula & Substituted Math Trace */}
-              {printSettings.showFormula && (result.formula || result.substitutedFormula) && (
-                <div className="mb-4 border border-black p-3 text-xs bg-gray-50 break-inside-avoid">
-                  <span className="font-bold uppercase text-[10px] text-gray-700 block mb-1">
-                    Governing Engineering Formula & Mathematical Trace
-                  </span>
-                  {result.formula && (
-                    <div className="font-mono text-black font-bold mb-1">
-                      Formula: {result.formula}
-                    </div>
-                  )}
-                  {result.substitutedFormula && (
-                    <div className="font-mono text-gray-800 text-[11px]">
-                      Substituted Trace: {result.substitutedFormula}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 7. Step-by-Step Mathematical Breakdown */}
-              {printSettings.showBreakdown && result.breakdown && result.breakdown.length > 0 && (
-                <div className="mb-4 break-inside-avoid">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-1 mb-2">
-                    Step-by-Step Calculation Breakdown
-                  </h4>
-                  <div className="space-y-1.5 text-xs font-mono">
-                    {result.breakdown.map((step, idx) => (
-                      <div key={idx} className="p-2 border border-gray-300 bg-white flex items-center justify-between">
-                        <span className="font-semibold text-black">{step.step}</span>
-                        <span className="text-gray-700">{step.expression} = <strong className="text-black">{step.result}</strong></span>
-                      </div>
-                    ))}
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
+                    Calculation Trace & Mathematical Derivation
+                  </h3>
+                  <div className="border border-slate-300 divide-y divide-slate-300 text-xs font-mono bg-white">
+                    {result.calculationTrace && result.calculationTrace.length > 0 ? (
+                      result.calculationTrace.map((tr, idx) => (
+                        <div key={idx} className="p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <div>
+                            <span className="font-bold text-slate-900 font-sans block sm:inline mr-2">
+                              {tr.label}:
+                            </span>
+                            <span className="text-slate-700">{tr.expression}</span>
+                          </div>
+                          <div className="sm:text-right shrink-0">
+                            <span className="font-bold text-slate-950">{tr.result}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      result.breakdown.map((b, idx) => (
+                        <div key={idx} className="p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <span className="font-bold text-slate-900 font-sans">{b.step}</span>
+                          <span className="text-slate-700">{b.expression} = <strong className="text-slate-950">{b.result}</strong></span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* 8. Design Assumptions & Code References */}
-              {printSettings.showAssumptions && result.assumptions && result.assumptions.length > 0 && (
-                <div className="mb-4 text-xs break-inside-avoid">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-black border-b border-black pb-1 mb-2">
-                    Design Assumptions & Standard Material Factors
+              {/* 8. ENGINEERING BASIS & CODE REFERENCES */}
+              {showEngineeringBasis && (
+                <div className="mb-4 border border-slate-300 p-3 text-xs bg-slate-50 break-inside-avoid">
+                  <h4 className="font-bold uppercase text-[10px] text-slate-700 mb-1.5 tracking-wider font-mono">
+                    Engineering Basis & Reference Parameters
                   </h4>
-                  <ul className="list-disc pl-4 space-y-1 text-gray-800 text-[11px]">
-                    {result.assumptions.map((ass, idx) => (
-                      <li key={idx}>
-                        <strong>{ass.label}:</strong> {ass.value}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-800">
+                    <div>
+                      <strong>Formula / Method:</strong> {result.formula || result.engineeringBasis?.formulaMethod || 'Standard Construction Formula'}
+                    </div>
+                    <div>
+                      <strong>Material Assumption:</strong> {result.engineeringBasis?.materialAssumption || 'Standard Construction Material'}
+                    </div>
+                    <div>
+                      <strong>Constants / Density:</strong> {result.engineeringBasis?.densityConstants || 'Standard reference constants'}
+                    </div>
+                    <div>
+                      <strong>Standard Reference:</strong> {result.engineeringBasis?.standardCode || 'Standard Theoretical Mass (BNBC / BDS 1313 / ASTM)'}
+                    </div>
+                  </div>
+                  {result.engineeringBasis?.toleranceNote && (
+                    <p className="mt-2 text-[10px] text-slate-600 leading-normal border-t border-slate-200 pt-1.5 italic">
+                      {result.engineeringBasis.toleranceNote}
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* 9. Jobsite Practical Engineering Notes */}
-              {printSettings.showEngineeringNotes && result.engineeringNotes && (
-                <div className="mb-4 border border-black p-3 text-xs bg-gray-50 break-inside-avoid">
-                  <span className="font-bold uppercase text-[10px] text-gray-700 block mb-1">
-                    Jobsite Execution & Quality Control Precautions
+              {/* 9. JOBSITE PRACTICAL ENGINEERING NOTES */}
+              {showEngineeringNotes && result.engineeringNotes && (
+                <div className="mb-4 border border-slate-300 p-3 text-xs bg-slate-50 break-inside-avoid">
+                  <span className="font-bold uppercase text-[10px] text-slate-700 block mb-1 font-mono">
+                    Engineering & Quality Control Notes
                   </span>
-                  <p className="text-gray-800 text-[11px] leading-relaxed">
+                  <p className="text-slate-800 text-[11px] leading-relaxed">
                     {result.engineeringNotes}
                   </p>
                 </div>
               )}
 
-              {/* 10. Building Code Compliance Reference */}
-              {printSettings.showCodeReferences && (
-                <div className="mb-6 border-t border-gray-300 pt-2 text-[10px] text-gray-600 font-mono break-inside-avoid">
-                  <span>Compliance & Code Profile: </span>
-                  <strong className="text-black">{codeProfileName}</strong>
-                  <span> · Structural concrete, rebar detailing, and soil mechanics verified against BNBC 2020 / ACI 318 / IS 456 / ASTM specifications.</span>
-                </div>
-              )}
-
-              {/* 11. Quality Assurance Verification & Sign-Off Block */}
-              {printSettings.showSignOffBlock && (
-                <div className="mt-8 pt-4 border-t-2 border-black break-inside-avoid print-sign-off">
-                  <span className="block text-[10px] uppercase font-bold text-gray-600 mb-6 tracking-wider">
-                    Jobsite Quality Assurance & Verification Sign-Off
+              {/* 10. VERIFICATION & SIGN-OFF BLOCK */}
+              {showVerification && (
+                <div className="mt-6 pt-3 border-t-2 border-slate-900 break-inside-avoid print-sign-off">
+                  <span className="block text-[10px] uppercase font-bold text-slate-600 mb-4 tracking-wider font-mono">
+                    Quality Assurance & Verification Sign-Off
                   </span>
                   <div className="grid grid-cols-3 gap-6 text-center text-xs">
-                    <div className="border-t border-black pt-1.5">
-                      <span className="block font-bold text-black">{projectMeta.preparedBy}</span>
-                      <span className="block text-[10px] text-gray-500 mt-0.5">Prepared By · Signature & Date</span>
+                    <div className="border-t border-slate-800 pt-1.5">
+                      <span className="block font-bold text-slate-900 truncate">
+                        {projectMeta.preparedBy || 'Prepared By'}
+                      </span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
                     </div>
-                    <div className="border-t border-black pt-1.5">
-                      <span className="block font-bold text-black">{projectMeta.checkedBy}</span>
-                      <span className="block text-[10px] text-gray-500 mt-0.5">Checked By · Signature & Date</span>
+                    <div className="border-t border-slate-800 pt-1.5">
+                      <span className="block font-bold text-slate-900 truncate">
+                        {projectMeta.checkedBy || 'Checked By'}
+                      </span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
                     </div>
-                    <div className="border-t border-black pt-1.5">
-                      <span className="block font-bold text-black">{projectMeta.approvedBy}</span>
-                      <span className="block text-[10px] text-gray-500 mt-0.5">Approved By · Signature & Date</span>
+                    <div className="border-t border-slate-800 pt-1.5">
+                      <span className="block font-bold text-slate-900 truncate">
+                        {projectMeta.approvedBy || 'Approved By'}
+                      </span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 12. Official Document Footer */}
-              {printSettings.showFooter && (
-                <div className="mt-8 pt-2 border-t border-gray-300 flex items-center justify-between text-[10px] text-gray-500 font-mono break-inside-avoid">
-                  <span>PB CivilLab | {projectMeta.projectName} | {projectMeta.documentNo}</span>
-                  <span>Generated: {new Date().toLocaleString()} · Page 1</span>
-                </div>
-              )}
+              {/* 11. ENGINEERING DISCLAIMER */}
+              <div className="mt-6 pt-2 border-t border-slate-300 text-[9px] text-slate-500 leading-normal break-inside-avoid">
+                <strong>Engineering Note:</strong> This calculation provides computational assistance based on the inputs, assumptions, units and calculation method selected by the user. It does not replace project specifications, approved drawings, applicable codes and standards, manufacturer data, site verification, or professional engineering judgment.
+              </div>
+
+              {/* 12. OFFICIAL FOOTER */}
+              <div className="mt-4 pt-2 border-t border-slate-400 flex items-center justify-between text-[9px] text-slate-500 font-mono break-inside-avoid">
+                <span>PB CivilLab · Calculate Smarter. Build Better. · Prokash Biswas</span>
+                <span>Doc: {projectMeta.documentNumber} · Page 1 of 1</span>
+              </div>
             </div>
           </div>
         </div>

@@ -1,7 +1,25 @@
 import { Tool, FormulaItem, RegionalProfile } from '../types';
 
+/**
+ * Fundamental Engineering Constants
+ * REBAR_WEIGHT_DENOMINATOR: 162.2
+ * Source/Derivation:
+ *   Theoretical mass per meter of circular steel bar:
+ *   W = Area × Density = (π/4 × (D/1000)²) × 7850 kg/m³
+ *   W = (π/4 × 7850 / 1,000,000) × D²
+ *   W = 0.0061653757... × D² = D² / 162.1978...
+ *   In civil engineering field standards (BNBC, IS 1786, ASTM), this is universally
+ *   standardized to the theoretical formula: Unit Weight = D² / 162.2 (kg/m).
+ */
+export const REBAR_WEIGHT_DENOMINATOR = 162.2;
+
+/**
+ * Standard density of carbon structural reinforcement steel: 7850 kg/m³
+ */
+export const STEEL_DENSITY = 7850;
+
 export const DENSITIES = {
-  steel: 7850,       // kg/m³
+  steel: STEEL_DENSITY, // kg/m³
   concrete: 2400,    // kg/m³ (plain) / 2500 (RCC)
   rcc: 2500,         // kg/m³
   cement: 1440,      // kg/m³

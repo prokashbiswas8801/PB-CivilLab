@@ -1,9 +1,10 @@
 import { CalculationResult, SurveyLevelRow } from '../types';
-import { DENSITIES, REBAR_STANDARD_DATA } from '../constants/engineering';
+import { DENSITIES, REBAR_STANDARD_DATA, REBAR_WEIGHT_DENOMINATOR, STEEL_DENSITY } from '../constants/engineering';
 import { formatNumber, formatCurrency } from './units';
+import { computeRebarCalculation } from './engineeringEngine';
 
 // ==========================================
-// 1. REBAR / STEEL WEIGHT & COST
+// 1. REBAR / STEEL WEIGHT & COST (SINGLE SOURCE OF TRUTH)
 // ==========================================
 export function calculateRebarWeight(
   diameterMm: number,
@@ -11,65 +12,16 @@ export function calculateRebarWeight(
   quantity: number = 1,
   ratePerKg: number = 0,
   formulaType: 'd2_162' | 'exact_density' = 'd2_162',
-  customDensity: number = DENSITIES.steel
+  customDensity: number = STEEL_DENSITY
 ): CalculationResult {
-  const d = Math.max(0, diameterMm);
-  const l = Math.max(0, lengthM);
-  const qty = Math.max(1, quantity);
-
-  let unitWeightKgM = 0;
-  let formulaStr = '';
-  let substitutedStr = '';
-
-  if (formulaType === 'd2_162') {
-    unitWeightKgM = (d * d) / 162.198;
-    formulaStr = 'W_unit = D² / 162.2 (kg/m)';
-    substitutedStr = `W_unit = ${d}² / 162.2 = ${formatNumber(unitWeightKgM, 4)} kg/m`;
-  } else {
-    // Exact: Area * Density
-    const areaM2 = (Math.PI * Math.pow(d / 1000, 2)) / 4;
-    unitWeightKgM = areaM2 * customDensity;
-    formulaStr = 'W_unit = (π × D² / 4) × ρ (kg/m)';
-    substitutedStr = `W_unit = (π × (${d}/1000)² / 4) × ${customDensity} = ${formatNumber(unitWeightKgM, 4)} kg/m`;
-  }
-
-  const totalLengthM = l * qty;
-  const totalWeightKg = unitWeightKgM * totalLengthM;
-  const totalWeightTon = totalWeightKg / 1000;
-  const totalCost = totalWeightKg * ratePerKg;
-
-  return {
-    title: 'Rebar / Steel Weight Calculation',
-    primaryValue: formatNumber(totalWeightKg, 2),
-    primaryUnit: 'kg',
-    secondaryValues: [
-      { label: 'Total Tonnes', value: formatNumber(totalWeightTon, 3), unit: 'tonne' },
-      { label: 'Unit Weight', value: formatNumber(unitWeightKgM, 3), unit: 'kg/m' },
-      { label: 'Total Length', value: formatNumber(totalLengthM, 2), unit: 'm' },
-      ...(ratePerKg > 0 ? [{ label: 'Estimated Cost', value: formatCurrency(totalCost) }] : []),
-    ],
-    breakdown: [
-      { step: '1. Calculate Unit Weight', expression: formulaType === 'd2_162' ? `${d}² / 162.2` : `Area × ${customDensity}`, result: `${formatNumber(unitWeightKgM, 4)} kg/m` },
-      { step: '2. Compute Cumulative Length', expression: `${l} m × ${qty} bars`, result: `${formatNumber(totalLengthM, 2)} m` },
-      { step: '3. Total Theoretical Mass', expression: `${formatNumber(unitWeightKgM, 4)} kg/m × ${formatNumber(totalLengthM, 2)} m`, result: `${formatNumber(totalWeightKg, 2)} kg` },
-      { step: '4. Convert to Metric Tonnes', expression: `${formatNumber(totalWeightKg, 2)} kg ÷ 1000`, result: `${formatNumber(totalWeightTon, 3)} tonne` },
-      ...(ratePerKg > 0 ? [{ step: '5. Total Cost Calculation', expression: `${formatNumber(totalWeightKg, 2)} kg × ${ratePerKg}/kg`, result: formatCurrency(totalCost) }] : []),
-    ],
-    formula: formulaStr,
-    substitutedFormula: substitutedStr,
-    inputsSummary: [
-      { label: 'Bar Diameter', value: `${d} mm` },
-      { label: 'Length per Bar', value: `${l} m` },
-      { label: 'Quantity / Number of Bars', value: `${qty} pcs` },
-      ...(ratePerKg > 0 ? [{ label: 'Rate per kg', value: formatCurrency(ratePerKg) }] : []),
-    ],
-    assumptions: [
-      { label: 'Calculation Method', value: formulaType === 'd2_162' ? 'Standard Construction Formula (D²/162.2)' : 'Exact Density Method' },
-      { label: 'Steel Density', value: `${customDensity} kg/m³` },
-      { label: 'Tolerance Note', value: 'Rolling margin / manufacturing tolerance (typically ±2% to ±4%) not included.' },
-    ],
-    engineeringNotes: 'Actual billed steel rebar weight from mills can vary within permissible code tolerances (ASTM A615 / BDS 1313 / IS 1786). Site weighbridge verification is advised for large dispatches.',
-  };
+  return computeRebarCalculation({
+    diameterMm,
+    lengthPerBarM: lengthM,
+    quantity,
+    ratePerKg,
+    formulaType,
+    customDensity,
+  });
 }
 
 // ==========================================

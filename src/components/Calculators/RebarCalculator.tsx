@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { ResultPanel } from '../ResultPanel';
-import { calculateRebarWeight, calculateBBS } from '../../utils/calculations';
+import { calculateBBS } from '../../utils/calculations';
+import { computeRebarCalculation } from '../../utils/engineeringEngine';
 import { REBAR_DIAMETERS, REBAR_STANDARD_DATA } from '../../constants/engineering';
 import { AppSettings, CalculationResult } from '../../types';
 import { UnitInput } from '../Common/UnitInput';
 import { QuickUnitConverter } from '../Common/QuickUnitConverter';
 import { toBase, fromBase, formatNumber, parseRebarCallout } from '../../utils/units';
-import { Sparkles, Check, ArrowRight } from 'lucide-react';
+import { Sparkles, Check, ArrowRight, Calculator } from 'lucide-react';
 
 interface RebarCalculatorProps {
   settings: AppSettings;
@@ -38,11 +39,12 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
 
   const defaultLengthUnit = settings.unitPreferences?.length || 'm';
 
-  // Rebar Weight State
-  const [diameterMm, setDiameterMm] = useState<number>(16);
+  // Rebar Weight State (Default: 25mm, 12m, 25 bars, 95 BDT/kg)
+  const [diameterMm, setDiameterMm] = useState<number>(25);
+  const [customDiameterInput, setCustomDiameterInput] = useState<string>('25');
   const [lengthVal, setLengthVal] = useState<string>('12');
   const [lengthUnit, setLengthUnit] = useState<string>(defaultLengthUnit);
-  const [quantity, setQuantity] = useState<string>('10');
+  const [quantity, setQuantity] = useState<string>('25');
   const [rateVal, setRateVal] = useState<string>('95');
   const [rateUnit, setRateUnit] = useState<string>('kg'); // per kg, per tonne, per lb
   const [formulaType, setFormulaType] = useState<'d2_162' | 'exact_density'>('d2_162');
@@ -80,22 +82,47 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
     return rawRate;
   }, [rateVal, rateUnit]);
 
-  // Weight Calculation
+  // Handle Diameter Changes (syncing custom input and pill)
+  const handleDiameterSelect = (dia: number) => {
+    setDiameterMm(dia);
+    setCustomDiameterInput(dia.toString());
+  };
+
+  const handleCustomDiameterChange = (val: string) => {
+    setCustomDiameterInput(val);
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed > 0) {
+      setDiameterMm(parsed);
+    }
+  };
+
+  // Authoritative Weight Calculation (Single Source of Truth)
   const weightResult = useMemo(() => {
-    const res = calculateRebarWeight(
+    const qty = parseInt(quantity, 10) || 1;
+    const res = computeRebarCalculation({
       diameterMm,
-      lengthMeters,
-      parseInt(quantity, 10) || 1,
-      effectiveRatePerKg,
-      formulaType
-    );
-    res.primaryCategory = 'mass';
-    res.inputsSummary.push({
-      label: 'Input Length',
-      value: `${lengthVal} ${lengthUnit} (${formatNumber(lengthMeters, 3)} m)`,
+      lengthPerBarM: lengthMeters,
+      quantity: qty,
+      ratePerKg: effectiveRatePerKg,
+      formulaType,
+      currencySymbol: settings.currencySymbol || '৳',
     });
+
+    // Clean inputs summary without redundant duplicate field
+    if (lengthUnit !== 'm') {
+      res.inputsSummary = res.inputsSummary.map(i => {
+        if (i.label === 'Length per Bar') {
+          return {
+            ...i,
+            value: `${lengthVal} ${lengthUnit} (${formatNumber(lengthMeters, 2)} m)`,
+          };
+        }
+        return i;
+      });
+    }
+
     return res;
-  }, [diameterMm, lengthMeters, lengthVal, lengthUnit, quantity, effectiveRatePerKg, formulaType]);
+  }, [diameterMm, lengthMeters, lengthVal, lengthUnit, quantity, effectiveRatePerKg, formulaType, settings.currencySymbol]);
 
   // BBS Dimensions normalized to mm
   const normalizedBbsDims = useMemo(() => {
@@ -128,13 +155,14 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
     const numBars = spacingM > 0 ? Math.floor(spanM / spacingM) + 1 : 1;
     const dia = parsed.diameterMm || 12;
 
-    const res = calculateRebarWeight(
-      dia,
-      barLenM,
-      numBars,
-      effectiveRatePerKg,
-      'd2_162'
-    );
+    const res = computeRebarCalculation({
+      diameterMm: dia,
+      lengthPerBarM: barLenM,
+      quantity: numBars,
+      ratePerKg: effectiveRatePerKg,
+      formulaType: 'd2_162',
+      currencySymbol: settings.currencySymbol || '৳',
+    });
 
     res.title = `Rebar Callout: ${parsed.isValid ? parsed.normalizedText : calloutText}`;
     res.primaryCategory = 'mass';
@@ -146,7 +174,7 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
       { label: 'Length per Bar', value: `${calloutBarLengthVal} ${calloutBarLengthUnit} (${formatNumber(barLenM, 3)} m)` },
     ];
     return res;
-  }, [calloutText, spanLengthVal, spanLengthUnit, calloutBarLengthVal, calloutBarLengthUnit, effectiveRatePerKg]);
+  }, [calloutText, spanLengthVal, spanLengthUnit, calloutBarLengthVal, calloutBarLengthUnit, effectiveRatePerKg, settings.currencySymbol]);
 
   const currentResult = useMemo(() => {
     switch (activeTab) {
@@ -158,10 +186,11 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
 
   const handleReset = () => {
     if (activeTab === 'weight') {
-      setDiameterMm(16);
+      setDiameterMm(25);
+      setCustomDiameterInput('25');
       setLengthVal('12');
       setLengthUnit('m');
-      setQuantity('10');
+      setQuantity('25');
       setRateVal('95');
     } else if (activeTab === 'bbs') {
       setBbsDia(10);
@@ -221,15 +250,33 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
           {activeTab === 'weight' && (
             <>
               <div>
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block mb-2">
-                  Nominal Bar Diameter
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                    Bar Diameter
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 font-mono">Custom Ø:</span>
+                    <div className="flex rounded-lg border border-white/10 bg-[#0F172A] px-2 py-0.5 w-24">
+                      <input
+                        type="number"
+                        step="any"
+                        min="1"
+                        max="100"
+                        value={customDiameterInput}
+                        onChange={e => handleCustomDiameterChange(e.target.value)}
+                        className="w-full bg-transparent text-xs font-mono font-bold text-cyan-300 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-mono self-center">mm</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mb-3">
                   {REBAR_DIAMETERS.map(dia => (
                     <button
                       key={dia}
                       type="button"
-                      onClick={() => setDiameterMm(dia)}
+                      onClick={() => handleDiameterSelect(dia)}
                       className={`py-2 px-1 rounded-lg text-xs font-mono font-semibold transition-colors border ${
                         diameterMm === dia
                           ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
@@ -241,10 +288,9 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
                   ))}
                 </div>
                 <div className="flex items-center justify-between text-xs text-slate-400 font-mono bg-[#0B0F19] p-2.5 rounded-lg border border-white/5">
-                  <span>Selected: Ø{diameterMm} mm</span>
+                  <span>Selected: Ø{formatNumber(diameterMm, 2)} mm</span>
                   <span>
-                    Unit Weight: {REBAR_STANDARD_DATA[diameterMm]?.unitWeight || ((diameterMm * diameterMm) / 162.2).toFixed(3)} kg/m
-                    ({formatNumber((REBAR_STANDARD_DATA[diameterMm]?.unitWeight || ((diameterMm * diameterMm) / 162.2)) * 0.671969, 3)} lb/ft)
+                    Unit Weight: {formatNumber((diameterMm * diameterMm) / 162.2, 3)} kg/m
                   </span>
                 </div>
               </div>
@@ -264,20 +310,23 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-300 block">Number of Bars (Qty)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={e => setQuantity(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#0F172A] px-3.5 py-2.5 text-sm font-mono text-slate-100 focus:outline-none focus:border-cyan-500/50"
-                  />
+                  <div className="flex rounded-xl border border-white/10 bg-[#0F172A] px-3.5 py-2.5">
+                    <input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={e => setQuantity(e.target.value)}
+                      className="w-full bg-transparent text-sm font-mono text-slate-100 focus:outline-none"
+                    />
+                    <span className="text-xs text-slate-400 font-mono self-center">pcs</span>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-300 block">
-                    Steel Procurement Rate ({settings.currencySymbol})
+                    Rate per kg ({settings.currencySymbol || 'BDT'})
                   </label>
                   <div className="flex rounded-xl border border-white/10 bg-[#0F172A] focus-within:border-cyan-500/50">
                     <input
@@ -328,6 +377,43 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* RECOMMENDED SUMMARY TABLE (Section 4 Specification) */}
+              <div className="pt-3 border-t border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider font-mono font-bold text-cyan-400">
+                  <span className="flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5" />
+                    <span>Calculated Summary</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">Full Precision</span>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-[#0F172A] p-3 text-xs font-mono divide-y divide-white/5">
+                  <div className="pb-1.5 flex items-center justify-between text-slate-300">
+                    <span className="text-slate-400">Total Length</span>
+                    <span className="font-bold text-slate-100">{weightResult.secondaryValues?.find(s => s.label === 'Total Length')?.value} m</span>
+                  </div>
+                  <div className="py-1.5 flex items-center justify-between text-slate-300">
+                    <span className="text-slate-400">Unit Weight</span>
+                    <span className="font-bold text-slate-100">{weightResult.secondaryValues?.find(s => s.label === 'Unit Weight')?.value} kg/m</span>
+                  </div>
+                  <div className="py-1.5 flex items-center justify-between text-slate-300">
+                    <span className="text-slate-400">Total Weight</span>
+                    <span className="font-bold text-cyan-400 text-sm">{weightResult.primaryValue} kg</span>
+                  </div>
+                  <div className="py-1.5 flex items-center justify-between text-slate-300">
+                    <span className="text-slate-400">Total Tonnes</span>
+                    <span className="font-bold text-slate-100">{weightResult.secondaryValues?.find(s => s.label === 'Total Tonnes')?.value} t</span>
+                  </div>
+                  {weightResult.secondaryValues?.some(s => s.label === 'Estimated Cost') && (
+                    <div className="pt-1.5 flex items-center justify-between text-slate-300">
+                      <span className="text-slate-400">Estimated Cost</span>
+                      <span className="font-bold text-emerald-400 text-sm">
+                        {weightResult.secondaryValues?.find(s => s.label === 'Estimated Cost')?.value}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </>
           )}
 
@@ -346,7 +432,7 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
                   placeholder="e.g. 12 mm @ 150 mm c/c"
                   className="w-full rounded-xl border border-white/10 bg-[#0F172A] px-3.5 py-2.5 text-sm font-mono text-cyan-300 font-bold focus:outline-none focus:border-cyan-500/50"
                 />
-                <div className="flex items-center gap-1.5 pt-1">
+                <div className="flex items-center gap-1.5 pt-1 flex-wrap">
                   {[
                     '10 mm @ 125 mm c/c',
                     '12 mm @ 150 mm c/c',
@@ -503,3 +589,4 @@ export const RebarCalculator: React.FC<RebarCalculatorProps> = ({
     </div>
   );
 };
+

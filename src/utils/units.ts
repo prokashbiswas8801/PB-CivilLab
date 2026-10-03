@@ -1311,11 +1311,11 @@ export function validateDimensions(
 // ==========================================
 // 7. HIGH PRECISION NUMBER & CURRENCY FORMATTERS
 // ==========================================
-export function formatNumber(val: number, maxDecimals: number = 2): string {
+export function formatNumber(val: number, maxDecimals: number = 2, minDecimals?: number): string {
   if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
-    return '0';
+    return minDecimals ? (0).toFixed(minDecimals) : '0';
   }
-  if (Number.isInteger(val)) {
+  if (minDecimals === undefined && Number.isInteger(val)) {
     return val.toLocaleString('en-US');
   }
   if (Math.abs(val) < 1e-6 && val !== 0) {
@@ -1324,9 +1324,8 @@ export function formatNumber(val: number, maxDecimals: number = 2): string {
   if (Math.abs(val) >= 1e9) {
     return val.toExponential(3);
   }
-  const rounded = Number(val.toFixed(maxDecimals));
-  return rounded.toLocaleString('en-US', {
-    minimumFractionDigits: 0,
+  return val.toLocaleString('en-US', {
+    minimumFractionDigits: minDecimals !== undefined ? minDecimals : 0,
     maximumFractionDigits: maxDecimals,
   });
 }

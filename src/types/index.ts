@@ -21,6 +21,51 @@ export interface Tool {
   keywords: string[];
 }
 
+export interface CalculationTraceStep {
+  label: string;
+  formula?: string;
+  expression: string;
+  result: string;
+}
+
+export interface EngineeringBasis {
+  calculationBasis: string;
+  formulaMethod: string;
+  standardCode?: string;
+  referenceClause?: string;
+  materialAssumption: string;
+  densityConstants: string;
+  toleranceNote?: string;
+  engineeringNotes?: string;
+}
+
+export type ReportStatus =
+  | 'Draft'
+  | 'For Review'
+  | 'Checked'
+  | 'Approved'
+  | 'For Construction'
+  | 'As-Built';
+
+export interface ReportProjectMeta {
+  projectName?: string;
+  projectId?: string;
+  client?: string;
+  contractor?: string;
+  consultant?: string;
+  location?: string;
+  drawingNumber?: string;
+  drawingRevision?: string;
+  documentNumber?: string;
+  calculationReference?: string;
+  preparedBy?: string;
+  checkedBy?: string;
+  approvedBy?: string;
+  reportStatus?: ReportStatus;
+  date?: string;
+  showEmptyFields?: boolean;
+}
+
 export interface CalculationResult {
   title: string;
   primaryValue: string;
@@ -31,11 +76,16 @@ export interface CalculationResult {
   breakdown: { step: string; expression: string; result: string }[];
   formula: string;
   substitutedFormula: string;
-  inputsSummary: { label: string; value: string }[];
+  inputsSummary: { label: string; value: string; rawValue?: number; unit?: string }[];
   assumptions: { label: string; value: string }[];
   engineeringNotes?: string;
   isPreliminary?: boolean;
   dimensionValidation?: { isValid: boolean; message?: string };
+  rawValues?: Record<string, number>;
+  calculationTrace?: CalculationTraceStep[];
+  engineeringBasis?: EngineeringBasis;
+  documentId?: string;
+  projectMeta?: ReportProjectMeta;
 }
 
 export interface CustomUnit {
