@@ -25,6 +25,12 @@ import {
 import { TOOLS_CATALOG } from '../constants/engineering';
 import { Tool, ToolCategory, HistoryItem } from '../types';
 import { Logo } from './Logo';
+import {
+  BeamColumnJointMotif,
+  RebarCrossSectionMotif,
+  SurveyorOpticalMotif,
+  StructuralTrussMotif,
+} from './Common/EngineeringMotifs';
 
 interface DashboardProps {
   onNavigate: (viewId: string) => void;
@@ -118,9 +124,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. Hero Section */}
-      <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-[#111827] to-[#0B0F19] p-6 sm:p-10 shadow-2xl overflow-hidden engineering-grid">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 1. Hero Workspace Hub */}
+      <div className="relative rounded-2xl border border-white/10 dark:border-white/10 light:border-slate-200/80 bg-gradient-to-b from-[#111827] to-[#0B0F19] dark:from-[#111827] dark:to-[#0B0F19] light:from-white light:to-slate-50 p-6 sm:p-10 shadow-2xl overflow-hidden engineering-grid">
+        {/* Architectural 2D Vector Watermarks */}
+        <div className="absolute -top-4 -right-4 opacity-10 dark:opacity-15 light:opacity-20 pointer-events-none">
+          <StructuralTrussMotif size={220} />
+        </div>
+        <div className="absolute bottom-2 right-1/3 opacity-5 dark:opacity-10 light:opacity-10 pointer-events-none hidden md:block">
+          <BeamColumnJointMotif size={140} />
+        </div>
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div className="max-w-2xl space-y-4">
@@ -128,12 +140,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <Logo variant="full" height={38} className="drop-shadow-md" />
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-wood font-normal tracking-wide text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-wood font-normal tracking-wide text-white dark:text-white light:text-slate-900 leading-tight">
               Civil Engineering Calculations.{' '}
-              <span className="text-cyan-400 block sm:inline">Simplified.</span>
+              <span className="text-cyan-400 dark:text-cyan-400 light:text-sky-600 block sm:inline">Simplified.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+            <p className="text-sm sm:text-base text-slate-300 dark:text-slate-300 light:text-slate-600 leading-relaxed font-sans">
               A comprehensive, transparent toolkit for civil engineers, surveyors, estimators, site supervisors, and students.
               Every calculation reveals its full substituted formula, intermediate mathematical breakdown, and engineering assumptions.
             </p>
@@ -145,7 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   const el = document.getElementById('tools-catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/25"
+                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/25 active:scale-95"
               >
                 <span>Explore All Tools</span>
                 <ArrowRight className="w-4 h-4" />
@@ -154,57 +166,100 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('unit-converter')}
-                className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-slate-200 font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl border border-white/15 dark:border-white/15 light:border-slate-300 bg-white/5 dark:bg-white/5 light:bg-slate-100 hover:bg-white/10 dark:hover:bg-white/10 light:hover:bg-slate-200 text-slate-200 dark:text-slate-200 light:text-slate-800 font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 active:scale-95"
               >
-                <ArrowLeftRight className="w-4 h-4 text-cyan-400" />
+                <ArrowLeftRight className="w-4 h-4 text-cyan-400 dark:text-cyan-400 light:text-sky-600" />
                 <span>Universal Unit Converter</span>
               </button>
             </div>
           </div>
 
           {/* Architectural Typographic Badge on Desktop */}
-          <div className="hidden lg:flex flex-col items-center justify-center p-8 rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-[#111827] to-[#0B0F19] backdrop-blur-sm shadow-2xl shrink-0 text-center min-w-[280px]">
-            <span className="font-wood font-normal text-4xl text-slate-100 tracking-wider block drop-shadow-md">
+          <div className="hidden lg:flex flex-col items-center justify-center p-8 rounded-2xl border border-cyan-500/20 dark:border-cyan-500/20 light:border-sky-300/60 bg-gradient-to-b from-[#111827] to-[#0B0F19] dark:from-[#111827] dark:to-[#0B0F19] light:from-white light:to-sky-50/50 backdrop-blur-sm shadow-2xl shrink-0 text-center min-w-[280px] relative overflow-hidden">
+            <div className="absolute -bottom-8 -right-8 opacity-10 pointer-events-none">
+              <RebarCrossSectionMotif size={120} />
+            </div>
+            <span className="font-wood font-normal text-4xl text-slate-100 dark:text-slate-100 light:text-slate-900 tracking-wider block drop-shadow-md">
               PB CivilLab
             </span>
-            <span className="text-[11px] uppercase tracking-[0.22em] text-cyan-400 font-semibold mt-2 block font-sans">
+            <span className="text-[11px] uppercase tracking-[0.22em] text-cyan-400 dark:text-cyan-400 light:text-sky-600 font-semibold mt-2 block font-sans">
               Calculate Smarter. Build Better.
             </span>
-            <div className="mt-4 pt-3 border-t border-white/10 w-full flex items-center justify-center gap-2 text-[11px] font-mono text-slate-400">
-              <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="mt-4 pt-3 border-t border-white/10 dark:border-white/10 light:border-slate-200 w-full flex items-center justify-center gap-2 text-[11px] font-mono text-slate-400 dark:text-slate-400 light:text-slate-600">
+              <Cpu className="w-3.5 h-3.5 text-cyan-400 dark:text-cyan-400 light:text-sky-600" />
               <span>OFFICIAL ENGINEERING SUITE</span>
             </div>
           </div>
         </div>
 
         {/* Quick Stats Banner */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t border-white/5 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 mt-6 border-t border-white/5 dark:border-white/5 light:border-slate-200 text-xs">
           <div>
-            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 block">
+            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 dark:text-cyan-400 light:text-sky-600 block">
               {TOOLS_CATALOG.length}+
             </span>
-            <span className="text-slate-400">Engineering Tools</span>
+            <span className="text-slate-400 dark:text-slate-400 light:text-slate-500">Engineering Tools</span>
           </div>
           <div>
-            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 block">
+            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 dark:text-cyan-400 light:text-sky-600 block">
               100+
             </span>
-            <span className="text-slate-400">Standard Units</span>
+            <span className="text-slate-400 dark:text-slate-400 light:text-slate-500">Standard Units</span>
           </div>
           <div>
-            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 block">
+            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 dark:text-cyan-400 light:text-sky-600 block">
               100%
             </span>
-            <span className="text-slate-400">Offline Capable</span>
+            <span className="text-slate-400 dark:text-slate-400 light:text-slate-500">Offline Capable</span>
           </div>
           <div>
-            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 block">
+            <span className="text-lg sm:text-xl font-bold font-mono text-cyan-400 dark:text-cyan-400 light:text-sky-600 block">
               4 Standards
             </span>
-            <span className="text-slate-400">BNBC / ACI / IS / ASTM</span>
+            <span className="text-slate-400 dark:text-slate-400 light:text-slate-500">BNBC / ACI / IS / ASTM</span>
           </div>
         </div>
       </div>
+
+      {/* 1.5 Recent Calculations Resume Bar (if any) */}
+      {history.length > 0 && (
+        <section aria-labelledby="recent-calcs-heading" className="p-4 rounded-2xl border border-white/10 dark:border-white/10 light:border-slate-200 bg-[#111827] dark:bg-[#111827] light:bg-white shadow-sm">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-cyan-400 dark:text-cyan-400 light:text-sky-600" />
+              <h2 id="recent-calcs-heading" className="text-xs font-bold uppercase tracking-wider text-slate-200 dark:text-slate-200 light:text-slate-800 font-mono">
+                Recent Calculations
+              </h2>
+            </div>
+            {onOpenHistory && (
+              <button
+                type="button"
+                onClick={onOpenHistory}
+                className="text-[11px] text-cyan-400 dark:text-cyan-400 light:text-sky-600 hover:underline font-semibold"
+              >
+                View All ({history.length})
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {history.slice(0, 5).map(item => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.toolId)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 dark:border-white/5 light:border-slate-200 bg-white/5 dark:bg-white/5 light:bg-slate-100 hover:border-cyan-500/40 text-xs text-slate-300 dark:text-slate-300 light:text-slate-700 whitespace-nowrap transition-all text-left group shrink-0 active:scale-95"
+              >
+                <span className="font-medium group-hover:text-cyan-400 dark:group-hover:text-cyan-300 light:group-hover:text-sky-600 truncate max-w-[140px]">
+                  {item.toolName}
+                </span>
+                <span className="text-[10px] font-mono text-cyan-400/90 dark:text-cyan-400/90 light:text-sky-700 font-semibold px-1.5 py-0.5 rounded bg-cyan-500/10 dark:bg-cyan-500/15 light:bg-sky-100">
+                  {item.summary}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. Quick Actions (Section 4) */}
       <section aria-labelledby="quick-actions-heading">
@@ -497,7 +552,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Tools Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredTools.length === 0 ? (
+          <div className="p-8 sm:p-12 rounded-2xl border border-white/10 dark:border-white/10 light:border-slate-200 bg-[#111827] dark:bg-[#111827] light:bg-white text-center flex flex-col items-center justify-center space-y-3 shadow-md">
+            <SurveyorOpticalMotif size={90} className="text-cyan-400/40 dark:text-cyan-400/40 light:text-sky-600/50 mb-1" />
+            <h3 className="text-base font-bold text-slate-200 dark:text-slate-200 light:text-slate-800">
+              No Engineering Tools Found
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 max-w-sm leading-relaxed">
+              {searchQuery ? `No calculators matched "${searchQuery}".` : 'No tools found in the selected filter.'} Try searching for keywords like rebar, concrete, brick, slope, or unit conversion.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCategory('all');
+                setShowOnlyFavorites(false);
+              }}
+              className="mt-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all active:scale-95 shadow-sm"
+            >
+              Reset All Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTools.map(tool => {
             const isFav = favorites.includes(tool.id);
 
@@ -557,6 +634,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             );
           })}
         </div>
+      )}
       </div>
 
       {/* Engineering Philosophy Notice */}

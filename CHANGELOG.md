@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-10-03
+
+### Added
+- **Material You / Material 3 Premium UI/UX**:
+  - Complete global **Light / Dark / System Default** theme switcher with real-time OS `prefers-color-scheme` synchronization and status bar meta updating.
+  - Centralized Material 3 Design Token system (`--md-sys-color-background`, `surface`, `surface-container`, `on-surface`, `primary`, `elevation-1..4`).
+  - **4 Distinct Engineering Result States**: Explicitly categorizing outputs into `CODE-REFERENCED` (BNBC/ACI/IS), `PRELIMINARY` (thumb-rule sizing), `MATERIAL ESTIMATION` (takeoff/BOQ), and `MATHEMATICAL EXACT` (conversions/geometry).
+  - **2D Monoline Vector Engineering Motifs**: Delicate SVG drafting elements for beam-column connections, rebar cages with 135° seismic hooks, optical surveying crosshairs, and structural trusses.
+  - **Dynamic Engineering Workspace Hub**: Modernized dashboard with quick recent calculations resume chips, segmented category filters, and tactile tool cards.
+
 ## [1.1.0] - 2026-10-02
 
 ### Changed

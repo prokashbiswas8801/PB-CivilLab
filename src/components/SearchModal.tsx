@@ -20,6 +20,7 @@ import { TOOLS_CATALOG, FORMULA_LIBRARY } from '../constants/engineering';
 import { BUILTIN_UNIT_CATEGORIES, getUnitsForCategory } from '../utils/units';
 import { Tool, FormulaItem } from '../types';
 import { Logo } from './Logo';
+import { SurveyorOpticalMotif } from './Common/EngineeringMotifs';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -646,9 +647,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
               {/* STATE 3: ZERO RESULTS */}
               {searchResults.totalCount === 0 && (
-                <div className="p-8 text-center text-slate-400 space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 mx-auto">
-                    <Search className="w-6 h-6" />
+                <div className="p-8 text-center text-slate-400 space-y-3 flex flex-col items-center">
+                  <div className="opacity-40 mb-1">
+                    <SurveyorOpticalMotif size={72} />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-200">No matching engineering tools found</h3>

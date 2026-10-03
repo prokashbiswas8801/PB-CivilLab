@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, History, Settings, ShieldAlert, Star, Menu } from 'lucide-react';
 import { AppSettings } from '../types';
 import { Logo } from './Logo';
+import { ThemeSwitcher } from './Common/ThemeSwitcher';
 
 interface HeaderProps {
   settings: AppSettings;
@@ -131,6 +132,10 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           )}
         </button>
+
+        {/* Theme Switcher (Material 3 Dynamic Appearance) */}
+        <ThemeSwitcher variant="segmented" className="hidden sm:inline-flex" />
+        <ThemeSwitcher variant="compact" className="sm:hidden" />
 
         {/* Settings Button */}
         <button

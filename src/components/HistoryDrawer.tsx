@@ -3,6 +3,7 @@ import { X, Trash2, Search, Calendar, ArrowRight, Bookmark, Download, Filter } f
 import { HistoryItem } from '../types';
 import { ConfirmDialog } from './Common/ConfirmDialog';
 import { useToast } from './Common/Toast';
+import { BeamColumnJointMotif } from './Common/EngineeringMotifs';
 
 interface HistoryDrawerProps {
   isOpen: boolean;
@@ -162,8 +163,10 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         {/* History List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {filtered.length === 0 ? (
-            <div className="p-10 text-center text-xs text-slate-500 space-y-2">
-              <Bookmark className="w-8 h-8 mx-auto text-slate-600" />
+            <div className="p-10 text-center text-xs text-slate-500 space-y-3 flex flex-col items-center">
+              <div className="opacity-30 mb-1">
+                <BeamColumnJointMotif size={64} />
+              </div>
               <p className="font-semibold text-slate-400">No Calculation Records Found</p>
               <p className="text-slate-500 text-[11px] max-w-xs mx-auto">
                 {search ? `No saved calculations match "${search}".` : 'Calculations saved using the "Save" button will appear here for future verification and 1-click restore.'}

@@ -23,6 +23,7 @@ import { AppSettings, RegionalProfile, UnitPreferences } from '../types';
 import { REGIONAL_PROFILES } from '../constants/engineering';
 import { ConfirmDialog } from './Common/ConfirmDialog';
 import { useToast } from './Common/Toast';
+import { useTheme } from '../context/ThemeContext';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -43,13 +44,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'appearance' | 'units' | 'calculation' | 'engineering' | 'data'>('units');
 
   // Appearance
-  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
-    try {
-      return (localStorage.getItem('pb_civillab_theme') as any) || 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
+  const { theme, setTheme } = useTheme();
 
   // Units
   const [unitSystem, setUnitSystem] = useState<AppSettings['unitSystem']>(settings.unitSystem || 'metric');
@@ -86,21 +81,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleThemeChange = (newTheme: 'dark' | 'light' | 'system') => {
     setTheme(newTheme);
-    try {
-      localStorage.setItem('pb_civillab_theme', newTheme);
-      const root = document.documentElement;
-      if (newTheme === 'light') {
-        root.classList.remove('dark');
-        root.classList.add('light');
-      } else if (newTheme === 'dark') {
-        root.classList.remove('light');
-        root.classList.add('dark');
-      } else {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.classList.toggle('dark', isDark);
-        root.classList.toggle('light', !isDark);
-      }
-    } catch {}
     toast.info(`Theme set to ${newTheme}`);
   };
 

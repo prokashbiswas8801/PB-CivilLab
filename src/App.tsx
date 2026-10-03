@@ -24,6 +24,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { DisclaimerModal } from './components/DisclaimerModal';
 import { SearchModal } from './components/SearchModal';
 import { ToastProvider } from './components/Common/Toast';
+import { ThemeProvider } from './context/ThemeContext';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { AppSettings, CalculationResult, HistoryItem } from './types';
 import { REGIONAL_PROFILES, TOOLS_CATALOG } from './constants/engineering';
@@ -195,8 +196,9 @@ export default function App() {
   const currentToolMeta = TOOLS_CATALOG.find(t => t.id === activeView);
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-[#070B12] text-[#F8FAFC] flex flex-col font-sans selection:bg-cyan-500/20 selection:text-cyan-300 pb-16 lg:pb-0">
+    <ThemeProvider>
+      <ToastProvider>
+        <div className="min-h-screen bg-[#070B12] dark:bg-[#0B0F17] light:bg-[#F4F6F9] text-[#F8FAFC] dark:text-[#F1F5F9] light:text-[#0F172A] flex flex-col font-sans selection:bg-cyan-500/20 selection:text-cyan-300 pb-16 lg:pb-0">
         {/* Top Header */}
         <Header
           settings={settings}
@@ -508,5 +510,6 @@ export default function App() {
         />
       </div>
     </ToastProvider>
+  </ThemeProvider>
   );
 }

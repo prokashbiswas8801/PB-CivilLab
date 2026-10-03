@@ -6,7 +6,6 @@ import {
   Bookmark,
   Star,
   RotateCcw,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   ArrowLeftRight,
@@ -20,6 +19,7 @@ import { CalculationResult, AppSettings } from '../types';
 import { Logo } from './Logo';
 import { useToast } from './Common/Toast';
 import { PrintPreviewModal } from './Common/PrintPreviewModal';
+import { RebarCrossSectionMotif, BeamColumnJointMotif } from './Common/EngineeringMotifs';
 import {
   getUnitsForCategory,
   fromBase,
@@ -51,10 +51,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const [copied, setCopied] = useState(false);
   const [copiedResultOnly, setCopiedResultOnly] = useState(false);
   const [savedHistory, setSavedHistory] = useState(false);
-  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [auditReport, setAuditReport] = useState<string | null>(null);
-  const [isAuditing, setIsAuditing] = useState(false);
-  const [auditError, setAuditError] = useState<string | null>(null);
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
 
   // Collapsible sections state (Section 13)
@@ -72,7 +68,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   // Reset output unit override if result changes
   React.useEffect(() => {
     setSelectedOutputUnit(null);
-    setAuditReport(null);
   }, [result?.title, result?.primaryValue, result?.primaryUnit]);
 
   // Determine Category of Primary Output
@@ -176,29 +171,65 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     return null;
   }, [result, outputCategory, baseValue, settings]);
 
-  // Status Badge Label (Section 14)
+  // Engineering Result States (Material 3 Precision Specification)
   const statusBadge = useMemo(() => {
     if (!result) return null;
-    if (result.isPreliminary) {
+    const t = result.title.toLowerCase();
+    if (result.isPreliminary || t.includes('preliminary') || t.includes('thumb-rule')) {
       return {
-        label: 'PRELIMINARY ESTIMATION',
-        className: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+        state: 'PRELIMINARY',
+        label: 'PRELIMINARY ESTIMATE',
+        className: 'bg-amber-500/15 border-amber-500/30 text-amber-300 dark:text-amber-300 light:text-amber-800',
+        note: 'Requires final structural verification against physical project drawings and certified design review.',
+        icon: AlertTriangle,
+      };
+    }
+    if (
+      t.includes('takeoff') ||
+      t.includes('boq') ||
+      t.includes('brick') ||
+      t.includes('plaster') ||
+      t.includes('paint') ||
+      t.includes('tile') ||
+      t.includes('haulage') ||
+      t.includes('rate')
+    ) {
+      return {
+        state: 'ESTIMATION',
+        label: 'MATERIAL ESTIMATION',
+        className: 'bg-sky-500/15 border-sky-500/30 text-sky-300 dark:text-sky-300 light:text-sky-800',
+        note: 'Site-specific wastage and field tolerances apply. Recommended allowances included in breakdown.',
+        icon: Hash,
+      };
+    }
+    if (t.includes('converter') || t.includes('parser') || t.includes('geometry') || t.includes('dms')) {
+      return {
+        state: 'INFORMATION',
+        label: 'MATHEMATICAL EXACT',
+        className: 'bg-slate-500/15 border-slate-500/30 text-slate-300 dark:text-slate-300 light:text-slate-700',
+        note: 'Exact algebraic and geometric derivation with high-precision double-float accuracy.',
+        icon: Info,
       };
     }
     return {
+      state: 'CODE-REFERENCED',
       label: 'CODE-REFERENCED CALCULATION',
-      className: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300',
+      className: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300 dark:text-cyan-300 light:text-sky-800',
+      note: 'Verified against standard civil specifications (BNBC 2020 / ACI 318 / IS 456 / ASTM).',
+      icon: ShieldCheck,
     };
   }, [result]);
 
   if (!result) {
     return (
-      <div className="h-full min-h-[340px] rounded-2xl border border-white/10 bg-[#111827]/60 p-8 flex flex-col items-center justify-center text-center shadow-lg">
-        <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 shadow-inner">
-          <ArrowLeftRight className="w-7 h-7" />
+      <div className="h-full min-h-[340px] rounded-2xl border border-white/10 dark:border-white/10 light:border-slate-200/80 bg-[#111827]/60 dark:bg-[#111827]/60 light:bg-white p-8 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
+        <div className="mb-3 opacity-25 dark:opacity-30 light:opacity-35 pointer-events-none">
+          <RebarCrossSectionMotif size={90} />
         </div>
-        <h4 className="text-base font-bold text-slate-200">Ready to Compute</h4>
-        <p className="text-xs text-slate-400 max-w-sm mt-1.5 leading-relaxed">
+        <h4 className="text-base font-bold text-slate-200 dark:text-slate-200 light:text-slate-800">
+          Ready to Compute
+        </h4>
+        <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 max-w-sm mt-1.5 leading-relaxed">
           Enter parameters on the left to compute live values. The Multi-Unit Engine will automatically normalize variables, display step-by-step arithmetic traces, and enable dynamic unit conversion.
         </p>
       </div>
@@ -262,74 +293,27 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }
   };
 
-  const handleTriggerAudit = async () => {
-    setIsAuditModalOpen(true);
-    if (auditReport) return;
-    setIsAuditing(true);
-    setAuditError(null);
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000);
-
-      const response = await fetch('/api/ai/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({ calculation: result }),
-      });
-      clearTimeout(timeoutId);
-
-      let data: any = {};
-      try {
-        data = await response.json();
-      } catch {
-        data = { error: `Server error (HTTP ${response.status})` };
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Audit request failed');
-      }
-      setAuditReport(data.audit);
-      toast.success('AI engineering code audit completed.');
-    } catch (err: any) {
-      const isAbort = err?.name === 'AbortError';
-      setAuditError(
-        isAbort
-          ? 'Audit request timed out after 35 seconds. Please try again.'
-          : err?.message || 'Error occurred while contacting AI Audit service.'
-      );
-    } finally {
-      setIsAuditing(false);
-    }
-  };
-
   return (
     <div className="rounded-2xl border border-white/10 bg-[#111827] shadow-xl overflow-hidden print-card">
       {/* Top Banner / Actions Header */}
       <div className="px-5 py-3.5 border-b border-white/5 bg-[#151C2B] flex items-center justify-between no-print flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <Logo variant="icon" height={18} />
-          <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider font-mono">
+          <span className="text-xs font-semibold text-cyan-400 dark:text-cyan-400 light:text-sky-700 uppercase tracking-wider font-mono">
             Calculation Output
           </span>
           {statusBadge && (
-            <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${statusBadge.className}`}>
-              {statusBadge.label}
+            <span
+              title={statusBadge.note}
+              className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-lg border flex items-center gap-1 font-semibold ${statusBadge.className}`}
+            >
+              <statusBadge.icon className="w-3 h-3 shrink-0" />
+              <span>{statusBadge.label}</span>
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {/* AI Audit Action Button */}
-          <button
-            type="button"
-            onClick={handleTriggerAudit}
-            title="Perform AI Technical Audit & Code Verification"
-            className="px-2.5 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-xs font-semibold text-cyan-300 transition-colors flex items-center gap-1.5 shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Audit with AI</span>
-          </button>
 
           {onToggleFavorite && (
             <button
@@ -872,66 +856,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </div>
       </div>
-
-      {/* AI Technical Audit Modal */}
-      {isAuditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 no-print">
-          <div className="w-full max-w-2xl rounded-2xl border border-cyan-500/30 bg-[#0F172A] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-6 py-4 border-b border-white/10 bg-[#151C2B] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
-                <div>
-                  <h3 className="text-sm font-bold text-white">AI Civil Engineering Audit & Code Check</h3>
-                  <p className="text-[11px] text-cyan-300 font-mono">{result.title}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAuditModalOpen(false)}
-                className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                aria-label="Close modal"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-200 leading-relaxed font-sans">
-              {isAuditing && (
-                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
-                  <p className="text-slate-300 font-medium">
-                    Performing structural audit against BNBC, ACI 318, IS 456 & ASTM codes...
-                  </p>
-                </div>
-              )}
-
-              {auditError && (
-                <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 space-y-1">
-                  <span className="font-bold">Audit Service Notice</span>
-                  <p>{auditError}</p>
-                </div>
-              )}
-
-              {auditReport && (
-                <div className="space-y-3 whitespace-pre-wrap font-sans text-slate-200 leading-relaxed">
-                  {auditReport}
-                </div>
-              )}
-            </div>
-
-            <div className="px-6 py-3 border-t border-white/10 bg-[#151C2B] flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-mono">Verified against standard civil tolerances</span>
-              <button
-                type="button"
-                onClick={() => setIsAuditModalOpen(false)}
-                className="px-4 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-slate-200 font-medium transition-colors"
-              >
-                Close Audit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PB CivilLab Dedicated Print & PDF Report Engine Modal */}
       <PrintPreviewModal
