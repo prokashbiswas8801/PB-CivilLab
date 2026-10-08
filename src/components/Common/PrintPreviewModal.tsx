@@ -115,6 +115,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   // Layout & Formatting State
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(defaultOrientation);
   const [margin, setMargin] = useState<'normal' | 'compact'>('normal');
+  const [pageFormatMode, setPageFormatMode] = useState<'one-page' | 'multi-page'>('one-page');
   const [customReportTitle, setCustomReportTitle] = useState<string>('');
 
   // Section Visibility State with LocalStorage Persistence
@@ -213,8 +214,9 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   };
 
   // Handle PDF Export with current preview options
-  const handleExportPDF = () => {
+  const handleExportPDF = (forceOnePage?: boolean) => {
     try {
+      const isOnePage = forceOnePage !== undefined ? forceOnePage : (pageFormatMode === 'one-page');
       exportCalculationToPDF(result, {
         projectMeta,
         customTitle: reportTitle,
@@ -222,9 +224,14 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         orientation,
         margin,
         sectionOptions: sections,
+        fitToOnePage: isOnePage,
         autoDownload: true,
       });
-      setExportNotice(`Generated & downloaded A4 ${orientation} engineering PDF with dynamic pagination & repeating header.`);
+      setExportNotice(
+        isOnePage
+          ? `Generated & downloaded A4 ${orientation} 1-Page Summary PDF (zero text cut & no overlap).`
+          : `Generated & downloaded A4 ${orientation} Multi-Page PDF with dynamic pagination & repeating header.`
+      );
       setTimeout(() => setExportNotice(null), 4000);
     } catch (err: any) {
       console.error('Failed to export PDF:', err);
@@ -393,12 +400,22 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
             <button
               type="button"
-              onClick={handleExportPDF}
-              className="px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-700 dark:text-cyan-300 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
-              title="Export multi-page vector A4 PDF with dynamic page numbering and repeating header"
+              onClick={() => handleExportPDF(true)}
+              className="px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-700 dark:text-cyan-300 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+              title="Export formatted 1-Page A4 Engineering PDF (guaranteed single page with zero text cut or overlap)"
             >
               <FileText className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-              <span>Export PDF</span>
+              <span>1-Page PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleExportPDF(false)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1.5 shadow-sm"
+              title="Export full multi-page technical report with repeating headers"
+            >
+              <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span className="hidden sm:inline">Multi-Page PDF</span>
             </button>
 
             <button
@@ -486,6 +503,18 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     <option value="compact">Compact (10 mm)</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-1">Page Format Mode</label>
+                <select
+                  value={pageFormatMode}
+                  onChange={e => setPageFormatMode(e.target.value as any)}
+                  className="w-full rounded-lg border border-cyan-500/30 bg-cyan-500/5 dark:bg-cyan-500/10 p-2 text-xs font-bold text-cyan-700 dark:text-cyan-300 focus:outline-none focus:border-cyan-500/50"
+                >
+                  <option value="one-page">A4 1-Page Summary (Clean, Compact, No Overlap)</option>
+                  <option value="multi-page">Full Multi-Page Report (All Sections Expanded)</option>
+                </select>
               </div>
 
               <div>

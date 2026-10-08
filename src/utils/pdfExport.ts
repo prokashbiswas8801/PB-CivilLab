@@ -27,6 +27,7 @@ export interface PDFExportOptions {
   orientation?: 'portrait' | 'landscape';
   margin?: 'normal' | 'compact';
   sectionOptions?: Partial<ReportSectionOptions>;
+  fitToOnePage?: boolean;
   // Backwards compatibility with test runners
   documentNumber?: string;
   reportStatus?: ReportStatus;
@@ -34,7 +35,9 @@ export interface PDFExportOptions {
 }
 
 /**
- * Generates and downloads a clean, professional multi-page A4 Engineering Report PDF.
+ * Generates and downloads a clean, professional A4 Engineering Report PDF.
+ * Supports both strict 1-page executive summary layout (zero overflow, zero text cut)
+ * and dynamic multi-page technical report pagination.
  */
 export function exportCalculationToPDF(
   result: CalculationResult,
@@ -47,6 +50,7 @@ export function exportCalculationToPDF(
     orientation = 'portrait',
     margin = 'normal',
     sectionOptions,
+    fitToOnePage = false,
     documentNumber: optDocNum,
     reportStatus: optStatus,
     date: optDate,
@@ -100,6 +104,10 @@ export function exportCalculationToPDF(
 
   // Running page break checker — reserves space for repeating header on subsequent pages
   function checkPageBreak(neededHeight: number, onNewPage?: () => void) {
+    if (fitToOnePage) {
+      // In strict 1-page A4 mode, never create a second page
+      return;
+    }
     if (y + neededHeight > pageHeight - marginY - footerReservedHeight) {
       doc.addPage('a4', isLandscape ? 'landscape' : 'portrait');
       y = marginY + repeatingHeaderHeight + 3.5;
@@ -182,7 +190,7 @@ export function exportCalculationToPDF(
   // =========================================================================
   // 1. PAGE 1: MANDATORY OFFICIAL BRANDING HEADER
   // =========================================================================
-  const headerHeight = 22;
+  const headerHeight = fitToOnePage ? 17 : 22;
   doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
   doc.rect(marginX, y, contentWidth, headerHeight, 'F');
   doc.setDrawColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
@@ -190,52 +198,52 @@ export function exportCalculationToPDF(
   doc.rect(marginX, y, contentWidth, headerHeight, 'S');
 
   // Company Logo Vector Emblem Badge
-  drawCompanyLogoBadge(doc, marginX + 3.5, y + 3.2, 9);
+  drawCompanyLogoBadge(doc, marginX + 3.5, y + 2.5, fitToOnePage ? 8 : 9);
 
   // Brand Name
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14.5);
+  doc.setFontSize(fitToOnePage ? 12.5 : 14.5);
   doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-  doc.text('PB CivilLab', marginX + 14.5, y + 7.2);
+  doc.text('PB CivilLab', marginX + 13.5, y + (fitToOnePage ? 6.2 : 7.2));
 
   // Badge: Official Calculation Sheet
-  const badgeX = marginX + 53;
-  const badgeY = y + 3.2;
+  const badgeX = marginX + (fitToOnePage ? 46 : 53);
+  const badgeY = y + 2.5;
   doc.setFillColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-  doc.roundedRect(badgeX, badgeY, 34, 4.5, 0.8, 0.8, 'F');
+  doc.roundedRect(badgeX, badgeY, fitToOnePage ? 44 : 34, 4.2, 0.8, 0.8, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.8);
+  doc.setFontSize(6.0);
   doc.setTextColor(255, 255, 255);
-  doc.text('ENGINEERING CALC SHEET', badgeX + 2, badgeY + 3.2);
+  doc.text(fitToOnePage ? 'A4 1-PAGE SUMMARY SHEET' : 'ENGINEERING CALC SHEET', badgeX + 2, badgeY + 3.0);
 
   // Subtitle & Creator Credits (Mandatory branding requirement)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.8);
+  doc.setFontSize(fitToOnePage ? 6.8 : 7.8);
   doc.setTextColor(textDark[0], textDark[1], textDark[2]);
-  doc.text('Civil Engineering Smart Toolkit & Verification Log', marginX + 14.5, y + 12.0);
+  doc.text('Civil Engineering Smart Toolkit & Verification Log', marginX + 13.5, y + (fitToOnePage ? 10.5 : 12.0));
 
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7.2);
+  doc.setFontSize(fitToOnePage ? 6.2 : 7.2);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text('Engineered by Prokash Biswas · Calculate Smarter. Build Better.', marginX + 14.5, y + 16.8);
+  doc.text('Engineered by Prokash Biswas · Calculate Smarter. Build Better.', marginX + 13.5, y + (fitToOnePage ? 14.5 : 16.8));
 
   // Document Reference & Status (Right Column of Header)
   const metaRightX = marginX + contentWidth - 3.5;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(fitToOnePage ? 7.2 : 8);
   doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-  doc.text(`Doc Ref: ${docNumber}`, metaRightX, y + 6.5, { align: 'right' });
+  doc.text(`Doc Ref: ${docNumber}`, metaRightX, y + (fitToOnePage ? 5.5 : 6.5), { align: 'right' });
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
+  doc.setFontSize(fitToOnePage ? 6.8 : 7.5);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text(`Date: ${dateStr}`, metaRightX, y + 11.5, { align: 'right' });
-  doc.text(`Status: ${status}`, metaRightX, y + 16.5, { align: 'right' });
+  doc.text(`Date: ${dateStr}`, metaRightX, y + (fitToOnePage ? 9.8 : 11.5), { align: 'right' });
+  doc.text(`Status: ${status}`, metaRightX, y + (fitToOnePage ? 14.2 : 16.5), { align: 'right' });
 
-  y += headerHeight + 3.5;
+  y += headerHeight + (fitToOnePage ? 2.5 : 3.5);
 
   // Title Strip
-  const titleStripHeight = 11;
+  const titleStripHeight = fitToOnePage ? 7.5 : 11;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
   doc.setLineWidth(0.3);
@@ -245,39 +253,39 @@ export function exportCalculationToPDF(
   const titleCol2 = contentWidth * 0.25;
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
+  doc.setFontSize(fitToOnePage ? 5.2 : 6);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text('CALCULATION SHEET', marginX + 3, y + 3.8);
+  doc.text('CALCULATION SHEET', marginX + 3, y + (fitToOnePage ? 2.8 : 3.8));
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
+  doc.setFontSize(fitToOnePage ? 7.5 : 8.5);
   doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
   const truncatedTitle = doc.splitTextToSize(sheetTitle, titleCol1 - 6)[0] || sheetTitle;
-  doc.text(truncatedTitle, marginX + 3, y + 8.5);
+  doc.text(truncatedTitle, marginX + 3, y + (fitToOnePage ? 6.2 : 8.5));
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
+  doc.setFontSize(fitToOnePage ? 5.2 : 6);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text('CATEGORY / DOMAIN', marginX + titleCol1 + 3, y + 3.8);
+  doc.text('CATEGORY / DOMAIN', marginX + titleCol1 + 3, y + (fitToOnePage ? 2.8 : 3.8));
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(fitToOnePage ? 7.0 : 8);
   doc.setTextColor(textDark[0], textDark[1], textDark[2]);
   const categoryLabel = (result.primaryCategory || 'Civil Structural').toUpperCase();
-  doc.text(categoryLabel, marginX + titleCol1 + 3, y + 8.5);
+  doc.text(categoryLabel, marginX + titleCol1 + 3, y + (fitToOnePage ? 6.2 : 8.5));
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6);
+  doc.setFontSize(fitToOnePage ? 5.2 : 6);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text('ORIENTATION', marginX + titleCol1 + titleCol2 + 3, y + 3.8);
+  doc.text('ORIENTATION', marginX + titleCol1 + titleCol2 + 3, y + (fitToOnePage ? 2.8 : 3.8));
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(fitToOnePage ? 7.0 : 8);
   doc.setTextColor(accentBlue[0], accentBlue[1], accentBlue[2]);
-  doc.text(`A4 ${isLandscape ? 'Landscape' : 'Portrait'}`, marginX + titleCol1 + titleCol2 + 3, y + 8.5);
+  doc.text(`A4 ${isLandscape ? 'Landscape' : 'Portrait'}`, marginX + titleCol1 + titleCol2 + 3, y + (fitToOnePage ? 6.2 : 8.5));
 
   doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
   doc.line(marginX + titleCol1, y, marginX + titleCol1, y + titleStripHeight);
   doc.line(marginX + titleCol1 + titleCol2, y, marginX + titleCol1 + titleCol2, y + titleStripHeight);
 
-  y += titleStripHeight + 3.5;
+  y += titleStripHeight + (fitToOnePage ? 2.5 : 3.5);
 
   // =========================================================================
   // 2. PROJECT INFORMATION SECTION (OPTIONAL)
@@ -341,91 +349,117 @@ export function exportCalculationToPDF(
   // 3. PRIMARY ENGINEERING RESULT (OPTIONAL)
   // =========================================================================
   if (sections.showPrimaryResult) {
-    checkPageBreak(20);
-    const primaryBoxHeight = 17;
+    checkPageBreak(16);
+    const primaryBoxHeight = fitToOnePage ? 13 : 17;
     doc.setFillColor(bgHighlight[0], bgHighlight[1], bgHighlight[2]);
     doc.setDrawColor(accentBlue[0], accentBlue[1], accentBlue[2]);
     doc.setLineWidth(0.6);
     doc.roundedRect(marginX, y, contentWidth, primaryBoxHeight, 1.2, 1.2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(fitToOnePage ? 6.0 : 7);
     doc.setTextColor(accentBlue[0], accentBlue[1], accentBlue[2]);
-    doc.text('PRIMARY COMPUTED ENGINEERING OUTPUT QUANTITY', marginX + 4, y + 4.8);
+    doc.text('PRIMARY COMPUTED ENGINEERING OUTPUT QUANTITY', marginX + 4, y + (fitToOnePage ? 3.8 : 4.8));
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
+    doc.setFontSize(fitToOnePage ? 12.5 : 15);
     doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
     const primaryDisplay = `${result.primaryValue} ${result.primaryUnit}`;
-    doc.text(primaryDisplay, marginX + 4, y + 13);
+    doc.text(primaryDisplay, marginX + 4, y + (fitToOnePage ? 10.2 : 13));
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
+    doc.setFontSize(fitToOnePage ? 6.0 : 7.2);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-    doc.text('Authoritative Calculation Engine · Zero Truncation Drift', marginX + contentWidth - 4, y + 9.5, { align: 'right' });
-    doc.text('Standard Engineering Precision', marginX + contentWidth - 4, y + 13.5, { align: 'right' });
+    doc.text('Authoritative Calculation Engine · Zero Truncation Drift', marginX + contentWidth - 4, y + (fitToOnePage ? 7.2 : 9.5), { align: 'right' });
+    doc.text('Standard Engineering Precision', marginX + contentWidth - 4, y + (fitToOnePage ? 10.5 : 13.5), { align: 'right' });
 
-    y += primaryBoxHeight + 3.5;
+    y += primaryBoxHeight + (fitToOnePage ? 2.5 : 3.5);
   }
 
   // =========================================================================
-  // 4. INPUT PARAMETERS TABLE (OPTIONAL, MULTI-ROW SAFE)
+  // 4 & 5. INPUT PARAMETERS & CALCULATED OUTPUTS
   // =========================================================================
-  if (sections.showInputs && result.inputsSummary && result.inputsSummary.length > 0) {
-    checkPageBreak(18);
-    drawSectionHeader(doc, 'SPECIFIED INPUT PARAMETERS', marginX, y, contentWidth);
-    y += 5;
+  const hasInputs = Boolean(sections.showInputs && result.inputsSummary && result.inputsSummary.length > 0);
+  const hasOutputs = Boolean(sections.showSecondaryResults && result.secondaryValues && result.secondaryValues.length > 0);
 
-    const rowH = 5.2;
-    const numCols = isLandscape ? 3 : 2;
-    const halfWidth = (contentWidth - (numCols - 1) * 2.5) / numCols;
+  if (fitToOnePage && hasInputs && hasOutputs) {
+    // Single-page executive layout: inputs on left, secondary outputs on right for optimal A4 space conservation
+    const halfColW = (contentWidth - 3) / 2;
+    const startY = y;
 
-    for (let i = 0; i < result.inputsSummary.length; i += numCols) {
-      checkPageBreak(rowH + 2, () => {
-        drawSectionHeader(doc, 'SPECIFIED INPUT PARAMETERS (CONTINUED)', marginX, y, contentWidth);
-        y += 5;
-      });
+    drawSectionHeader(doc, 'SPECIFIED INPUT PARAMETERS', marginX, startY, halfColW, true);
+    drawSectionHeader(doc, 'CALCULATED OUTPUTS & METRICS', marginX + halfColW + 3, startY, halfColW, true);
 
-      for (let c = 0; c < numCols; c++) {
-        const item = result.inputsSummary[i + c];
-        if (item) {
-          const colX = marginX + c * (halfWidth + 2.5);
-          drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), colX, y, halfWidth);
+    let curInY = startY + 4.2;
+    result.inputsSummary!.forEach(item => {
+      const rowH = drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), marginX, curInY, halfColW, false, 6.0, true);
+      curInY += rowH;
+    });
+
+    let curOutY = startY + 4.2;
+    result.secondaryValues!.forEach(item => {
+      const rowH = drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), marginX + halfColW + 3, curOutY, halfColW, true, 6.0, true);
+      curOutY += rowH;
+    });
+
+    y = Math.max(curInY, curOutY) + 2.5;
+  } else {
+    // Standard sequential layout
+    if (hasInputs) {
+      checkPageBreak(18);
+      drawSectionHeader(doc, 'SPECIFIED INPUT PARAMETERS', marginX, y, contentWidth, fitToOnePage);
+      y += fitToOnePage ? 4.2 : 5;
+
+      const numCols = isLandscape ? 3 : 2;
+      const colW = (contentWidth - (numCols - 1) * 2.5) / numCols;
+
+      for (let i = 0; i < result.inputsSummary!.length; i += numCols) {
+        checkPageBreak(8, () => {
+          drawSectionHeader(doc, 'SPECIFIED INPUT PARAMETERS (CONTINUED)', marginX, y, contentWidth);
+          y += 5;
+        });
+
+        let maxRowH = 5.0;
+        for (let c = 0; c < numCols; c++) {
+          const item = result.inputsSummary![i + c];
+          if (item) {
+            const colX = marginX + c * (colW + 2.5);
+            const h = drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), colX, y, colW, false, fitToOnePage ? 6.0 : 6.4, fitToOnePage);
+            if (h > maxRowH) maxRowH = h;
+          }
         }
+        y += maxRowH;
       }
-      y += rowH;
+      y += 2.5;
     }
-    y += 2.5;
-  }
 
-  // =========================================================================
-  // 5. CALCULATED OUTPUTS & SECONDARY QUANTITIES (OPTIONAL)
-  // =========================================================================
-  if (sections.showSecondaryResults && result.secondaryValues && result.secondaryValues.length > 0) {
-    checkPageBreak(18);
-    drawSectionHeader(doc, 'CALCULATED OUTPUTS & SECONDARY METRICS', marginX, y, contentWidth);
-    y += 5;
+    if (hasOutputs) {
+      checkPageBreak(18);
+      drawSectionHeader(doc, 'CALCULATED OUTPUTS & SECONDARY METRICS', marginX, y, contentWidth, fitToOnePage);
+      y += fitToOnePage ? 4.2 : 5;
 
-    const rowH = 5.2;
-    const numCols = isLandscape ? 3 : 2;
-    const halfWidth = (contentWidth - (numCols - 1) * 2.5) / numCols;
+      const numCols = isLandscape ? 3 : 2;
+      const colW = (contentWidth - (numCols - 1) * 2.5) / numCols;
 
-    for (let i = 0; i < result.secondaryValues.length; i += numCols) {
-      checkPageBreak(rowH + 2, () => {
-        drawSectionHeader(doc, 'CALCULATED OUTPUTS & SECONDARY METRICS (CONTINUED)', marginX, y, contentWidth);
-        y += 5;
-      });
+      for (let i = 0; i < result.secondaryValues!.length; i += numCols) {
+        checkPageBreak(8, () => {
+          drawSectionHeader(doc, 'CALCULATED OUTPUTS & SECONDARY METRICS (CONTINUED)', marginX, y, contentWidth);
+          y += 5;
+        });
 
-      for (let c = 0; c < numCols; c++) {
-        const item = result.secondaryValues[i + c];
-        if (item) {
-          const colX = marginX + c * (halfWidth + 2.5);
-          drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), colX, y, halfWidth, true);
+        let maxRowH = 5.0;
+        for (let c = 0; c < numCols; c++) {
+          const item = result.secondaryValues![i + c];
+          if (item) {
+            const colX = marginX + c * (colW + 2.5);
+            const h = drawTableRow(doc, item.label, `${item.value} ${item.unit || ''}`.trim(), colX, y, colW, true, fitToOnePage ? 6.0 : 6.4, fitToOnePage);
+            if (h > maxRowH) maxRowH = h;
+          }
         }
+        y += maxRowH;
       }
-      y += rowH;
+      y += 2.5;
     }
-    y += 2.5;
   }
 
   // =========================================================================
@@ -504,33 +538,37 @@ export function exportCalculationToPDF(
     doc.setLineWidth(0.3);
 
     const hasSubstituted = Boolean(result.substitutedFormula);
-    const formulaBoxHeight = hasSubstituted ? 14 : 9;
+    const subLines = hasSubstituted ? doc.splitTextToSize(result.substitutedFormula, contentWidth - 42) : [];
+    const formulaBoxHeight = hasSubstituted ? Math.max(fitToOnePage ? 9 : 14, subLines.length * 3.5 + (fitToOnePage ? 6 : 8)) : (fitToOnePage ? 7 : 9);
     doc.rect(marginX, y, contentWidth, formulaBoxHeight, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(fitToOnePage ? 6.0 : 7);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-    doc.text('GOVERNING EQUATION:', marginX + 3, y + 4.2);
+    doc.text('GOVERNING EQUATION:', marginX + 3, y + (fitToOnePage ? 3.5 : 4.2));
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
+    doc.setFontSize(fitToOnePage ? 7.5 : 8.5);
     doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
     const formulaStr = result.formula || 'Standard Construction Formula';
-    doc.text(formulaStr, marginX + 38, y + 4.2);
+    doc.text(formulaStr, marginX + 38, y + (fitToOnePage ? 3.5 : 4.2));
 
     if (hasSubstituted) {
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
+      doc.setFontSize(fitToOnePage ? 6.0 : 7);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      doc.text('SUBSTITUTED TRACE:', marginX + 3, y + 9.8);
+      doc.text('SUBSTITUTED TRACE:', marginX + 3, y + (fitToOnePage ? 7.2 : 9.8));
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(fitToOnePage ? 7.0 : 8);
       doc.setTextColor(accentBlue[0], accentBlue[1], accentBlue[2]);
-      const substitutedStr = doc.splitTextToSize(result.substitutedFormula, contentWidth - 42)[0] || result.substitutedFormula;
-      doc.text(substitutedStr, marginX + 38, y + 9.8);
+      let curSubY = y + (fitToOnePage ? 7.2 : 9.8);
+      subLines.forEach((l: string) => {
+        doc.text(l, marginX + 38, curSubY);
+        curSubY += 3.5;
+      });
     }
-    y += formulaBoxHeight + 3;
+    y += formulaBoxHeight + (fitToOnePage ? 2 : 3);
 
     // Trace items if available
     if (result.calculationTrace && result.calculationTrace.length > 0) {
@@ -637,7 +675,7 @@ export function exportCalculationToPDF(
   // 10. QUALITY ASSURANCE SIGN-OFF BLOCK (OPTIONAL)
   // =========================================================================
   if (sections.showVerification) {
-    const signBlockHeight = 28;
+    const signBlockHeight = fitToOnePage ? 18 : 28;
     checkPageBreak(signBlockHeight + 4);
 
     // Background card for QA Sign-off block (exact match with print stylesheet & preview)
@@ -652,14 +690,14 @@ export function exportCalculationToPDF(
     doc.rect(marginX, y, contentWidth, 0.6, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.2);
+    doc.setFontSize(fitToOnePage ? 5.6 : 6.2);
     doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-    doc.text('JOBSITE QUALITY ASSURANCE & VERIFICATION SIGN-OFF', marginX + 3, y + 3.8);
+    doc.text('JOBSITE QUALITY ASSURANCE & VERIFICATION SIGN-OFF', marginX + 3, y + (fitToOnePage ? 3.0 : 3.8));
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(5.5);
+    doc.setFontSize(fitToOnePage ? 5.0 : 5.5);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-    doc.text('SITE QA PROTOCOL', marginX + contentWidth - 3, y + 3.8, { align: 'right' });
+    doc.text('SITE QA PROTOCOL', marginX + contentWidth - 3, y + (fitToOnePage ? 3.0 : 3.8), { align: 'right' });
 
     const signColWidth = contentWidth / 3;
     const roles = [
@@ -671,8 +709,8 @@ export function exportCalculationToPDF(
     roles.forEach((r, idx) => {
       const rx = marginX + idx * signColWidth + 2;
       const boxW = signColWidth - 4;
-      const boxH = signBlockHeight - 8;
-      const boxY = y + 5.5;
+      const boxH = signBlockHeight - (fitToOnePage ? 5.5 : 8);
+      const boxY = y + (fitToOnePage ? 4.2 : 5.5);
 
       // Inner signature box with white background fill
       doc.setFillColor(255, 255, 255);
@@ -680,26 +718,26 @@ export function exportCalculationToPDF(
       doc.setLineWidth(0.2);
       doc.roundedRect(rx, boxY, boxW, boxH, 0.8, 0.8, 'FD');
 
-      const lineY = boxY + boxH - 5.5;
+      const lineY = boxY + boxH - (fitToOnePage ? 4.0 : 5.5);
       doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
       doc.setLineWidth(0.3);
       doc.line(rx + 4, lineY, rx + boxW - 4, lineY);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.8);
+      doc.setFontSize(fitToOnePage ? 5.8 : 6.8);
       doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-      doc.text(r.title, rx + boxW / 2, boxY + 4.0, { align: 'center' });
+      doc.text(r.title, rx + boxW / 2, boxY + (fitToOnePage ? 3.0 : 4.0), { align: 'center' });
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
+      doc.setFontSize(fitToOnePage ? 5.6 : 6.5);
       doc.setTextColor(textDark[0], textDark[1], textDark[2]);
       const fittedName = doc.splitTextToSize(r.name ? r.name : r.defaultSub, boxW - 4)[0] || (r.name || r.defaultSub);
-      doc.text(fittedName, rx + boxW / 2, boxY + 8.5, { align: 'center' });
+      doc.text(fittedName, rx + boxW / 2, boxY + (fitToOnePage ? 6.2 : 8.5), { align: 'center' });
 
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(5.5);
+      doc.setFontSize(fitToOnePage ? 4.8 : 5.5);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      doc.text('Signature & Date', rx + boxW / 2, lineY + 3.2, { align: 'center' });
+      doc.text('Signature & Date', rx + boxW / 2, lineY + (fitToOnePage ? 2.6 : 3.2), { align: 'center' });
     });
 
     y += signBlockHeight;
@@ -803,23 +841,30 @@ function drawSectionHeader(
   title: string,
   x: number,
   y: number,
-  width: number
+  width: number,
+  compact = false
 ) {
+  const barH = compact ? 3.0 : 3.6;
   doc.setFillColor(2, 132, 199);
-  doc.rect(x, y - 2.8, 1.8, 3.6, 'F');
+  doc.rect(x, y - (barH * 0.72), 1.8, barH, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
+  doc.setFontSize(compact ? 6.5 : 7.2);
   doc.setTextColor(15, 23, 42);
   doc.text(title, x + 3.5, y);
 
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.2);
-  doc.line(x + 3.5 + doc.getTextWidth(title) + 3, y - 0.8, x + width, y - 0.8);
+  const textW = doc.getTextWidth(title);
+  if (x + 3.5 + textW + 3 < x + width) {
+    doc.line(x + 3.5 + textW + 3, y - 0.8, x + width, y - 0.8);
+  }
 }
 
 /**
- * Helper to draw a clean key-value table row
+ * Helper to draw a clean key-value table row.
+ * Guarantees zero text truncation and zero overlap by calculating dynamic height
+ * and wrapping both label and value across multiple lines when needed.
  */
 function drawTableRow(
   doc: jsPDF,
@@ -828,25 +873,53 @@ function drawTableRow(
   x: number,
   y: number,
   width: number,
-  isHighlight = false
-) {
-  doc.setFillColor(isHighlight ? 240 : 248, isHighlight ? 249 : 250, isHighlight ? 255 : 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.2);
-  doc.rect(x, y, width, 4.6, 'FD');
+  isHighlight = false,
+  customFontSize = 6.4,
+  compact = false
+): number {
+  const lineSpacing = customFontSize * 0.44;
+  const paddingY = compact ? 1.5 : 2.0;
+  const minHeight = compact ? 4.2 : 5.0;
 
-  const maxValWidth = width * 0.45;
+  // Allocate width dynamically: value takes up to 46% of cell, label takes the rest
+  const maxValWidth = Math.min(width * 0.46, Math.max(width * 0.28, doc.getTextWidth(value) + 4));
   const maxLabelWidth = width - maxValWidth - 4;
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.3);
-  doc.setTextColor(100, 116, 139);
-  const fitLabel = doc.splitTextToSize(label, maxLabelWidth)[0] || label;
-  doc.text(fitLabel, x + 2, y + 3.2);
+  doc.setFontSize(customFontSize);
+  const labelLines = doc.splitTextToSize(label, maxLabelWidth);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.0);
+  doc.setFontSize(customFontSize + 0.4);
+  const valLines = doc.splitTextToSize(value, maxValWidth);
+
+  const totalLines = Math.max(labelLines.length, valLines.length, 1);
+  const rowHeight = Math.max(minHeight, totalLines * lineSpacing + paddingY * 2);
+
+  doc.setFillColor(isHighlight ? 240 : 248, isHighlight ? 249 : 250, isHighlight ? 255 : 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.2);
+  doc.rect(x, y, width, rowHeight, 'FD');
+
+  // Render all label lines without awkward cuts
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(customFontSize);
+  doc.setTextColor(100, 116, 139);
+  let curLabelY = y + paddingY + customFontSize * 0.32;
+  labelLines.forEach((line: string) => {
+    doc.text(line, x + 2, curLabelY);
+    curLabelY += lineSpacing;
+  });
+
+  // Render all value lines without awkward cuts
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(customFontSize + 0.4);
   doc.setTextColor(15, 23, 42);
-  const fitVal = doc.splitTextToSize(value, maxValWidth)[0] || value;
-  doc.text(fitVal, x + width - 2, y + 3.2, { align: 'right' });
+  let curValY = y + paddingY + (customFontSize + 0.4) * 0.32;
+  valLines.forEach((line: string) => {
+    doc.text(line, x + width - 2, curValY, { align: 'right' });
+    curValY += lineSpacing;
+  });
+
+  return rowHeight;
 }
