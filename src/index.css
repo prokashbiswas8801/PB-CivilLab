@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./print.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 @custom-variant light (&:where(.light, [data-theme="light"], [data-theme="light"] *));
@@ -337,151 +338,11 @@ html.light .bg-cyan-950\/20,
   }
 }
 
-/* Print Stylesheet for Physical Project Site Logs & A4 Reports */
+/* Print Stylesheet integration (delegated to print.css) */
 @media print {
   @page {
-    margin: 12mm;
-    size: A4 portrait;
-  }
-
-  body {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    font-size: 10pt;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .no-print, header, footer, aside, nav, button, input, select, textarea {
-    display: none !important;
-  }
-
-  .print-only {
-    display: block !important;
-  }
-
-  /* Reset modal overlay containers so they flow naturally over multiple pages without clipping */
-  body.print-preview-modal-active .print-modal-overlay {
-    position: static !important;
-    display: block !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  body.print-preview-modal-active .print-modal-inner {
-    position: static !important;
-    display: block !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  body.print-preview-modal-active .print-modal-canvas {
-    position: static !important;
-    display: block !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    width: 100% !important;
-  }
-
-  .print-sheet {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-    color: #0f172a !important;
-  }
-
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    display: block !important;
-  }
-
-  .grid {
-    display: block !important;
-  }
-
-  [class*="col-span-"], [class*="lg:col-span-"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    display: block !important;
-  }
-
-  .print-card {
-    background: #ffffff !important;
-    border: none !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .print-text-dark {
-    color: #000000 !important;
-  }
-
-  .print-text-muted {
-    color: #333333 !important;
-  }
-
-  .print-border {
-    border-color: #000000 !important;
-  }
-
-  /* Table multi-page splitting & repeating headers */
-  table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-    page-break-inside: auto !important;
-  }
-
-  thead {
-    display: table-header-group !important;
-  }
-
-  tfoot {
-    display: table-footer-group !important;
-  }
-
-  tr {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  td, th {
-    page-break-inside: avoid !important;
-  }
-
-  .print-no-break, .break-inside-avoid, .print-sign-off {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
+    size: A4;
+    margin: 15mm;
   }
 }
 

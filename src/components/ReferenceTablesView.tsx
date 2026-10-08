@@ -17,7 +17,7 @@ export const ReferenceTablesView: React.FC = () => {
         </p>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
+          <table className="w-full text-xs text-left calculation-table">
             <thead className="bg-slate-100 dark:bg-[#151C2B] text-slate-700 dark:text-slate-400 font-mono uppercase border-b border-slate-200 dark:border-white/5">
               <tr>
                 <th className="py-2.5 px-3">Diameter (Ø mm)</th>
@@ -33,7 +33,7 @@ export const ReferenceTablesView: React.FC = () => {
                 const barsPerTon = wt12m > 0 ? Math.floor(1000 / wt12m) : 0;
 
                 return (
-                  <tr key={dia} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                  <tr key={dia} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors boq-row">
                     <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-200">Ø {dia} mm</td>
                     <td className="py-2 px-3 text-slate-700 dark:text-slate-300">{data.area} mm²</td>
                     <td className="py-2 px-3 font-semibold text-cyan-700 dark:text-cyan-300">{data.unitWeight} kg/m</td>
@@ -58,7 +58,7 @@ export const ReferenceTablesView: React.FC = () => {
         </p>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
+          <table className="w-full text-xs text-left calculation-table">
             <thead className="bg-slate-100 dark:bg-[#151C2B] text-slate-700 dark:text-slate-400 font-mono uppercase border-b border-slate-200 dark:border-white/5">
               <tr>
                 <th className="py-2.5 px-3">Material</th>
@@ -79,7 +79,7 @@ export const ReferenceTablesView: React.FC = () => {
                 { name: 'Ordinary Potable Water', kg: DENSITIES.water, note: '1 Liter = exactly 1 kg at 4°C' },
                 { name: 'Compacted Soil / Subgrade', kg: DENSITIES.soil_compacted, note: 'Optimum moisture content standard proctor' },
               ].map((m, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors boq-row">
                   <td className="py-2 px-3 font-sans font-medium text-slate-900 dark:text-slate-200">{m.name}</td>
                   <td className="py-2 px-3 font-semibold text-cyan-700 dark:text-cyan-300">{m.kg} kg/m³</td>
                   <td className="py-2 px-3 text-slate-700 dark:text-slate-300">{formatNumber(m.kg * 0.062428, 1)} lb/ft³</td>
@@ -102,7 +102,7 @@ export const ReferenceTablesView: React.FC = () => {
         </p>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
+          <table className="w-full text-xs text-left calculation-table">
             <thead className="bg-slate-100 dark:bg-[#151C2B] text-slate-700 dark:text-slate-400 font-mono uppercase border-b border-slate-200 dark:border-white/5">
               <tr>
                 <th className="py-2.5 px-3">Grade (Approx)</th>
@@ -118,7 +118,7 @@ export const ReferenceTablesView: React.FC = () => {
                 { grade: 'M20', ratio: '1 : 1.5 : 3', bags: '~ 8.2 bags', use: 'Standard residential RCC beams, slabs, and columns' },
                 { grade: 'M25', ratio: '1 : 1 : 2', bags: '~ 11.2 bags', use: 'Heavy loaded columns, water retaining tanks, piles' },
               ].map((c, idx) => (
-                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors boq-row">
                   <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-200">{c.grade}</td>
                   <td className="py-2.5 px-3 font-semibold text-cyan-700 dark:text-cyan-300">{c.ratio}</td>
                   <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">{c.bags}</td>

@@ -1,0 +1,334 @@
+/* ==============================================================================
+ * PB CivilLab — Comprehensive Civil Engineering Print & PDF Stylesheet
+ * Standardized for A4 Technical Reports, Site Verification Logs & BOQ Schedules
+ * Author: Prokash Biswas | Calculate Smarter. Build Better.
+ * ============================================================================== */
+
+/* ------------------------------------------------------------------------------
+ * 1. Standard A4 Page Definition & Margins
+ * ------------------------------------------------------------------------------ */
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@page :first {
+  margin: 15mm;
+}
+
+/* ------------------------------------------------------------------------------
+ * 2. Media Print Rules
+ * ------------------------------------------------------------------------------ */
+@media print {
+  /* Global reset for print media */
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-box-sizing: border-box !important;
+    box-sizing: border-box !important;
+  }
+
+  html,
+  body {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 10pt !important;
+    line-height: 1.45 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  #root,
+  main,
+  article,
+  section {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* ----------------------------------------------------------------------------
+   * 2. Hide Non-Essential UI Elements During Printing
+   * ---------------------------------------------------------------------------- */
+  .no-print,
+  .no-print *,
+  aside,
+  nav,
+  header:not(.print-header),
+  footer:not(.print-footer),
+  button,
+  .btn,
+  input:not([type="checkbox"]),
+  select,
+  textarea,
+  .sidebar,
+  [data-sidebar],
+  .mobile-bottom-nav,
+  .mobile-nav,
+  .history-drawer,
+  .search-modal,
+  .settings-modal,
+  .update-prompt,
+  .toast-container,
+  .pwa-install-btn,
+  .action-toolbar,
+  [role="navigation"],
+  [role="dialog"] > div:not(.print-modal-inner),
+  .backdrop-blur-md:not(.print-modal-overlay) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Show elements designated strictly for print output */
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* ----------------------------------------------------------------------------
+   * 3. Natural Flow Container Resets (Print Preview Modal & Overlays)
+   * Prevents clipping, overflow-scrolling traps, and multi-page truncations
+   * ---------------------------------------------------------------------------- */
+  body.print-preview-modal-active,
+  body.print-preview-modal-active .print-modal-overlay,
+  body.print-preview-modal-active .print-modal-inner,
+  body.print-preview-modal-active .print-modal-canvas {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: auto !important;
+  }
+
+  .print-sheet,
+  #pb-civillab-printable-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* ----------------------------------------------------------------------------
+   * 4. Multi-Page Data Tables & BOQ Schedules
+   * Prevent mid-table splits, orphaned headers, and clipping
+   * ---------------------------------------------------------------------------- */
+  .calculation-table,
+  table.calculation-table,
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    table-layout: auto !important;
+    margin-bottom: 4mm !important;
+    overflow: visible !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Critical Table Page-Break Avoidance Rules */
+  .calculation-table,
+  .boq-row,
+  tr.boq-row,
+  .calculation-table tr,
+  .calculation-table > tbody > tr,
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  .calculation-table td,
+  .calculation-table th,
+  td,
+  th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    padding: 5pt 6pt !important;
+    vertical-align: middle !important;
+  }
+
+  /* ----------------------------------------------------------------------------
+   * 5. Quality Assurance & Sign-Off Block Background Preservation
+   * ---------------------------------------------------------------------------- */
+  .qa-sign-off-block,
+  .print-sign-off,
+  .qa-block,
+  .quality-assurance-block {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-before: auto !important;
+    background-color: #f8fafc !important;
+    border: 1.5pt solid #0f172a !important;
+    padding: 10pt 12pt !important;
+    margin-top: 6mm !important;
+    margin-bottom: 4mm !important;
+    border-radius: 4pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .qa-sign-off-block .sign-box,
+  .print-sign-off .sign-box {
+    background-color: #ffffff !important;
+    border-top: 1pt solid #1e293b !important;
+    padding-top: 4pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Color preservation for highlight badges and key metrics */
+  .print-color-exact,
+  .bg-slate-100,
+  .bg-slate-50,
+  .bg-emerald-50,
+  .bg-sky-50,
+  .border-slate-900,
+  .border-emerald-800,
+  .border-sky-800 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* ----------------------------------------------------------------------------
+   * 6. Elimination of Awkward Text Clipping & Overlapping
+   * ---------------------------------------------------------------------------- */
+  /* Disable text ellipsis truncation on printed sheets */
+  .truncate,
+  [class*="truncate"],
+  .text-ellipsis {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Text elements wrap gracefully without clipped descenders */
+  p,
+  span,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  li {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .print-heading {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    break-after: avoid-page !important;
+  }
+
+  /* Monospace calculation trace & formulas */
+  code,
+  pre,
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* Grid layout adaptation: convert complex screen grids to clean print blocks */
+  .grid {
+    display: block !important;
+  }
+
+  [class*="grid-cols-"] > * {
+    display: inline-block !important;
+    vertical-align: top !important;
+    margin-bottom: 4pt !important;
+  }
+
+  .grid.grid-cols-2 > * {
+    width: 49% !important;
+    margin-right: 1% !important;
+  }
+
+  .grid.grid-cols-3 > * {
+    width: 32% !important;
+    margin-right: 1% !important;
+  }
+
+  /* General break avoidance utility */
+  .break-inside-avoid,
+  .print-no-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-inside: avoid-page !important;
+  }
+
+  /* Hyperlinks: avoid ugly URLs expansion on civil reports */
+  a[href]::after {
+    content: none !important;
+  }
+}

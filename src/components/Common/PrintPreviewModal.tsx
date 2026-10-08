@@ -143,7 +143,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       document.head.appendChild(styleEl);
     }
 
-    const marginValue = margin === 'compact' ? '10mm' : '14mm';
+    const marginValue = margin === 'compact' ? '10mm' : '15mm';
     styleEl.textContent = `
       @media print {
         @page {
@@ -479,7 +479,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     onChange={e => setMargin(e.target.value as any)}
                     className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-[#151C2B] p-2 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500/50"
                   >
-                    <option value="normal">Normal (14 mm)</option>
+                    <option value="normal">Normal (15 mm - A4 Standard)</option>
                     <option value="compact">Compact (10 mm)</option>
                   </select>
                 </div>
@@ -919,11 +919,11 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   </h3>
                   <div className={`grid ${orientation === 'landscape' ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3'} gap-2 border border-slate-300 p-2.5 text-xs bg-slate-50/70`}>
                     {visibleProjectFields.map((field, idx) => (
-                      <div key={idx} className="truncate">
+                      <div key={idx} className="break-words min-w-0">
                         <span className="block text-[9px] uppercase font-bold text-slate-500">
                           {field.label}
                         </span>
-                        <span className="font-semibold text-slate-900 truncate block">
+                        <span className="font-semibold text-slate-900 break-words block">
                           {field.value}
                         </span>
                       </div>
@@ -963,7 +963,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
                     Specified Input Parameters
                   </h3>
-                  <table className="w-full text-xs border border-collapse border-slate-800">
+                  <table className="w-full text-xs border border-collapse border-slate-800 calculation-table">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-800">
                         <th className="p-1.5 text-left border-r border-slate-800 font-bold text-slate-900">Parameter Description</th>
@@ -972,7 +972,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     </thead>
                     <tbody>
                       {result.inputsSummary.map((inp, idx) => (
-                        <tr key={idx} className="border-b border-slate-300">
+                        <tr key={idx} className="border-b border-slate-300 boq-row">
                           <td className="p-1.5 border-r border-slate-800 font-medium text-slate-900">{inp.label}</td>
                           <td className="p-1.5 text-right font-mono font-bold text-slate-900">{inp.value}</td>
                         </tr>
@@ -988,7 +988,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
                     Calculated Outputs & Secondary Quantities
                   </h3>
-                  <table className="w-full text-xs border border-collapse border-slate-800">
+                  <table className="w-full text-xs border border-collapse border-slate-800 calculation-table">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-800">
                         <th className="p-1.5 text-left border-r border-slate-800 font-bold text-slate-900">Output Item</th>
@@ -997,7 +997,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     </thead>
                     <tbody>
                       {result.secondaryValues.map((sec, idx) => (
-                        <tr key={idx} className="border-b border-slate-300">
+                        <tr key={idx} className="border-b border-slate-300 boq-row">
                           <td className="p-1.5 border-r border-slate-800 font-medium text-slate-900">{sec.label}</td>
                           <td className="p-1.5 text-right font-mono font-bold text-slate-950">
                             {sec.value} {sec.unit || ''}
@@ -1015,7 +1015,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-800 pb-1 mb-2 font-mono">
                     Detailed Arithmetic Breakdown & Step Summary
                   </h3>
-                  <table className="w-full text-xs border border-collapse border-slate-800">
+                  <table className="w-full text-xs border border-collapse border-slate-800 calculation-table">
                     <thead>
                       <tr className="bg-slate-100 border-b border-slate-800">
                         <th className="p-1.5 text-left border-r border-slate-800 font-bold text-slate-900 w-1/3">Step</th>
@@ -1025,7 +1025,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     </thead>
                     <tbody>
                       {result.breakdown.map((b, idx) => (
-                        <tr key={idx} className="border-b border-slate-300">
+                        <tr key={idx} className="border-b border-slate-300 boq-row">
                           <td className="p-1.5 border-r border-slate-800 font-medium text-slate-900 font-sans">{b.step}</td>
                           <td className="p-1.5 border-r border-slate-800 text-slate-700 font-mono text-[11px]">{b.expression}</td>
                           <td className="p-1.5 text-right font-mono font-bold text-slate-950">{b.result}</td>
@@ -1122,28 +1122,39 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
               {/* 11. VERIFICATION & SIGN-OFF BLOCK (OPTIONAL) */}
               {sections.showVerification && (
-                <div className="mt-6 pt-3 border-t-2 border-slate-900 break-inside-avoid print-sign-off">
-                  <span className="block text-[10px] uppercase font-bold text-slate-600 mb-4 tracking-wider font-mono">
-                    Quality Assurance & Verification Sign-Off
-                  </span>
-                  <div className="grid grid-cols-3 gap-6 text-center text-xs">
-                    <div className="border-t border-slate-800 pt-1.5">
-                      <span className="block font-bold text-slate-900 truncate">
+                <div className="mt-6 p-4 rounded-lg bg-slate-50 border-2 border-slate-900 break-inside-avoid print-sign-off qa-sign-off-block">
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-300 pb-1.5">
+                    <span className="block text-[10px] uppercase font-bold text-slate-800 tracking-wider font-mono">
+                      Quality Assurance & Verification Sign-Off
+                    </span>
+                    <span className="text-[9px] font-mono font-semibold text-slate-500 uppercase">
+                      Site QA Protocol
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center text-xs">
+                    <div className="bg-white p-2.5 rounded border border-slate-300 sign-box">
+                      <span className="block font-bold text-slate-900 break-words">
                         {projectMeta.preparedBy || 'Prepared By'}
                       </span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
+                      <span className="block text-[10px] text-slate-500 mt-1 border-t border-slate-800 pt-1">
+                        Signature & Date
+                      </span>
                     </div>
-                    <div className="border-t border-slate-800 pt-1.5">
-                      <span className="block font-bold text-slate-900 truncate">
+                    <div className="bg-white p-2.5 rounded border border-slate-300 sign-box">
+                      <span className="block font-bold text-slate-900 break-words">
                         {projectMeta.checkedBy || 'Checked By'}
                       </span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
+                      <span className="block text-[10px] text-slate-500 mt-1 border-t border-slate-800 pt-1">
+                        Signature & Date
+                      </span>
                     </div>
-                    <div className="border-t border-slate-800 pt-1.5">
-                      <span className="block font-bold text-slate-900 truncate">
+                    <div className="bg-white p-2.5 rounded border border-slate-300 sign-box">
+                      <span className="block font-bold text-slate-900 break-words">
                         {projectMeta.approvedBy || 'Approved By'}
                       </span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5">Signature & Date</span>
+                      <span className="block text-[10px] text-slate-500 mt-1 border-t border-slate-800 pt-1">
+                        Signature & Date
+                      </span>
                     </div>
                   </div>
                 </div>

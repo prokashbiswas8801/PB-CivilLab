@@ -640,14 +640,26 @@ export function exportCalculationToPDF(
     const signBlockHeight = 28;
     checkPageBreak(signBlockHeight + 4);
 
-    doc.setDrawColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-    doc.setLineWidth(0.4);
-    doc.line(marginX, y, marginX + contentWidth, y);
+    // Background card for QA Sign-off block (exact match with print stylesheet & preview)
+    doc.setFillColor(bgLight[0], bgLight[1], bgLight[2]);
+    doc.roundedRect(marginX, y, contentWidth, signBlockHeight, 1.2, 1.2, 'F');
+    doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(marginX, y, contentWidth, signBlockHeight, 1.2, 1.2, 'S');
+
+    // Accent line at top of sign-off block
+    doc.setFillColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
+    doc.rect(marginX, y, contentWidth, 0.6, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.5);
+    doc.setFontSize(6.2);
+    doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
+    doc.text('JOBSITE QUALITY ASSURANCE & VERIFICATION SIGN-OFF', marginX + 3, y + 3.8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
     doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-    doc.text('JOBSITE QUALITY ASSURANCE & VERIFICATION SIGN-OFF', marginX, y + 3.8);
+    doc.text('SITE QA PROTOCOL', marginX + contentWidth - 3, y + 3.8, { align: 'right' });
 
     const signColWidth = contentWidth / 3;
     const roles = [
@@ -657,27 +669,37 @@ export function exportCalculationToPDF(
     ];
 
     roles.forEach((r, idx) => {
-      const rx = marginX + idx * signColWidth;
-      const lineY = y + 17;
+      const rx = marginX + idx * signColWidth + 2;
+      const boxW = signColWidth - 4;
+      const boxH = signBlockHeight - 8;
+      const boxY = y + 5.5;
 
+      // Inner signature box with white background fill
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(rx, boxY, boxW, boxH, 0.8, 0.8, 'FD');
+
+      const lineY = boxY + boxH - 5.5;
       doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
       doc.setLineWidth(0.3);
-      doc.line(rx + 6, lineY, rx + signColWidth - 6, lineY);
+      doc.line(rx + 4, lineY, rx + boxW - 4, lineY);
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.2);
+      doc.setFontSize(6.8);
       doc.setTextColor(primaryNavy[0], primaryNavy[1], primaryNavy[2]);
-      doc.text(r.title, rx + signColWidth / 2, y + 8, { align: 'center' });
+      doc.text(r.title, rx + boxW / 2, boxY + 4.0, { align: 'center' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(textDark[0], textDark[1], textDark[2]);
-      doc.text(r.name ? r.name : r.defaultSub, rx + signColWidth / 2, y + 12, { align: 'center' });
+      const fittedName = doc.splitTextToSize(r.name ? r.name : r.defaultSub, boxW - 4)[0] || (r.name || r.defaultSub);
+      doc.text(fittedName, rx + boxW / 2, boxY + 8.5, { align: 'center' });
 
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(5.8);
+      doc.setFontSize(5.5);
       doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-      doc.text('Signature & Date', rx + signColWidth / 2, lineY + 3.5, { align: 'center' });
+      doc.text('Signature & Date', rx + boxW / 2, lineY + 3.2, { align: 'center' });
     });
 
     y += signBlockHeight;
@@ -813,13 +835,18 @@ function drawTableRow(
   doc.setLineWidth(0.2);
   doc.rect(x, y, width, 4.6, 'FD');
 
+  const maxValWidth = width * 0.45;
+  const maxLabelWidth = width - maxValWidth - 4;
+
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6.3);
   doc.setTextColor(100, 116, 139);
-  doc.text(label.slice(0, 32), x + 2, y + 3.2);
+  const fitLabel = doc.splitTextToSize(label, maxLabelWidth)[0] || label;
+  doc.text(fitLabel, x + 2, y + 3.2);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.2);
+  doc.setFontSize(7.0);
   doc.setTextColor(15, 23, 42);
-  doc.text(value.slice(0, 24), x + width - 2, y + 3.2, { align: 'right' });
+  const fitVal = doc.splitTextToSize(value, maxValWidth)[0] || value;
+  doc.text(fitVal, x + width - 2, y + 3.2, { align: 'right' });
 }

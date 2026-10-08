@@ -26,6 +26,7 @@ import { SearchModal } from './components/SearchModal';
 import { ProjectWorkspaceModal } from './components/Common/ProjectWorkspaceModal';
 import { RateLibraryModal } from './components/Common/RateLibraryModal';
 import { ToastProvider } from './components/Common/Toast';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import { ThemeProvider } from './context/ThemeContext';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { AppSettings, CalculationResult, HistoryItem, ProjectWorkspace } from './types';
@@ -652,6 +653,9 @@ export default function App() {
           onClose={() => setIsRateLibraryOpen(false)}
           settings={settings}
         />
+
+        {/* PWA Update Banner with "Refresh to Update" Prompt */}
+        <UpdatePrompt />
       </div>
     </ToastProvider>
   </ThemeProvider>
