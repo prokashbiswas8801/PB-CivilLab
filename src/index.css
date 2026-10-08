@@ -1,0 +1,877 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, [data-theme="light"], [data-theme="light"] *));
+
+/* ==============================================================================
+ * PB CivilLab — Material You / Material 3 Design Token Architecture
+ * Author: Prokash Biswas | Calculate Smarter. Build Better.
+ * ============================================================================== */
+
+:root {
+  /* Material 3 Dark Palette (Primary Engineering Mode) */
+  --md-sys-color-background: #0B0F17;
+  --md-sys-color-surface: #111722;
+  --md-sys-color-surface-container-lowest: #0E131C;
+  --md-sys-color-surface-container-low: #151D2A;
+  --md-sys-color-surface-container: #192231;
+  --md-sys-color-surface-container-high: #1E293B;
+  --md-sys-color-surface-container-highest: #253347;
+  
+  --md-sys-color-on-surface: #F1F5F9;
+  --md-sys-color-on-surface-variant: #94A3B8;
+  --md-sys-color-on-surface-muted: #64748B;
+  
+  --md-sys-color-primary: #38BDF8;
+  --md-sys-color-on-primary: #082F49;
+  --md-sys-color-primary-container: rgba(56, 189, 248, 0.16);
+  --md-sys-color-on-primary-container: #BAE6FD;
+  
+  --md-sys-color-secondary: #F59E0B;
+  --md-sys-color-on-secondary: #451A03;
+  --md-sys-color-secondary-container: rgba(245, 158, 11, 0.16);
+  --md-sys-color-on-secondary-container: #FDE68A;
+  
+  --md-sys-color-tertiary: #10B981;
+  --md-sys-color-on-tertiary: #022C22;
+  --md-sys-color-tertiary-container: rgba(16, 185, 129, 0.16);
+  --md-sys-color-on-tertiary-container: #A7F3D0;
+  
+  --md-sys-color-error: #F87171;
+  --md-sys-color-error-container: rgba(239, 68, 68, 0.16);
+  --md-sys-color-on-error-container: #FECACA;
+  
+  --md-sys-color-outline: rgba(255, 255, 255, 0.12);
+  --md-sys-color-outline-variant: rgba(255, 255, 255, 0.06);
+
+  /* Elevation Shadows */
+  --md-sys-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-2: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --md-sys-elevation-4: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+
+  /* Grid pattern tint */
+  --grid-line: rgba(255, 255, 255, 0.04);
+  --grid-dot: rgba(56, 189, 248, 0.08);
+}
+
+/* Material 3 Light Palette (Calm Engineered Workspace) */
+html.light, [data-theme="light"] {
+  --md-sys-color-background: #F4F6F9;
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-surface-container-low: #F8FAFC;
+  --md-sys-color-surface-container: #EDF2F7;
+  --md-sys-color-surface-container-high: #E2E8F0;
+  --md-sys-color-surface-container-highest: #CBD5E1;
+  
+  --md-sys-color-on-surface: #0F172A;
+  --md-sys-color-on-surface-variant: #475569;
+  --md-sys-color-on-surface-muted: #64748B;
+  
+  --md-sys-color-primary: #0284C7;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: rgba(2, 132, 199, 0.12);
+  --md-sys-color-on-primary-container: #0369A1;
+  
+  --md-sys-color-secondary: #D97706;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: rgba(217, 119, 6, 0.12);
+  --md-sys-color-on-secondary-container: #92400E;
+  
+  --md-sys-color-tertiary: #059669;
+  --md-sys-color-on-tertiary: #FFFFFF;
+  --md-sys-color-tertiary-container: rgba(5, 150, 105, 0.12);
+  --md-sys-color-on-tertiary-container: #065F46;
+  
+  --md-sys-color-error: #DC2626;
+  --md-sys-color-error-container: rgba(220, 38, 38, 0.10);
+  --md-sys-color-on-error-container: #991B1B;
+  
+  --md-sys-color-outline: rgba(15, 23, 42, 0.12);
+  --md-sys-color-outline-variant: rgba(15, 23, 42, 0.06);
+
+  --md-sys-elevation-1: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --md-sys-elevation-2: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --md-sys-elevation-3: 0 10px 15px -3px rgba(15, 23, 42, 0.10), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
+  --md-sys-elevation-4: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+
+  --grid-line: rgba(15, 23, 42, 0.04);
+  --grid-dot: rgba(2, 132, 199, 0.08);
+}
+
+@utility font-wood {
+  font-family: 'Rye', 'Alfa Slab One', serif;
+}
+
+.font-wood {
+  font-family: 'Rye', 'Alfa Slab One', serif;
+}
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: var(--md-sys-color-on-surface);
+    background-color: var(--md-sys-color-background);
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible Material 3 focus rings */
+  :focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* ==============================================================================
+ * Light Theme Automatic Class Adaptation
+ * Ensures existing dark hex codes automatically adapt when light mode is selected
+ * ============================================================================== */
+html.light body,
+[data-theme="light"] body {
+  background-color: #F4F6F9 !important;
+  color: #0F172A !important;
+}
+
+html.light .bg-\[\#070B12\],
+[data-theme="light"] .bg-\[\#070B12\],
+html.light .bg-\[\#070B12\]\/80,
+[data-theme="light"] .bg-\[\#070B12\]\/80,
+html.light .bg-\[\#070B12\]\/50,
+[data-theme="light"] .bg-\[\#070B12\]\/50 {
+  background-color: #F8FAFC !important;
+}
+
+html.light .bg-\[\#0A0E17\],
+[data-theme="light"] .bg-\[\#0A0E17\],
+html.light .bg-\[\#0A0E17\]\/80,
+[data-theme="light"] .bg-\[\#0A0E17\]\/80,
+html.light .bg-\[\#080D16\],
+[data-theme="light"] .bg-\[\#080D16\],
+html.light .bg-\[\#080D16\]\/90,
+[data-theme="light"] .bg-\[\#080D16\]\/90 {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#0B0F19\],
+[data-theme="light"] .bg-\[\#0B0F19\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-\[\#0B0F19\]\/90,
+[data-theme="light"] .bg-\[\#0B0F19\]\/90 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html.light .bg-\[\#0F172A\],
+[data-theme="light"] .bg-\[\#0F172A\] {
+  background-color: #F8FAFC !important;
+}
+
+html.light .bg-\[\#111827\],
+[data-theme="light"] .bg-\[\#111827\] {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+html.light .bg-\[\#151C2B\],
+[data-theme="light"] .bg-\[\#151C2B\] {
+  background-color: #EDF2F7 !important;
+}
+
+html.light .bg-\[\#1E293B\],
+[data-theme="light"] .bg-\[\#1E293B\] {
+  background-color: #E2E8F0 !important;
+}
+
+html.light .bg-white\/5,
+[data-theme="light"] .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+html.light .bg-white\/10,
+[data-theme="light"] .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html.light .border-white\/10,
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html.light .border-white\/5,
+[data-theme="light"] .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+html.light .border-white\/15,
+[data-theme="light"] .border-white\/15 {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+html.light .border-white\/20,
+[data-theme="light"] .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.20) !important;
+}
+
+html.light .text-\[\#F8FAFC\],
+[data-theme="light"] .text-\[\#F8FAFC\] {
+  color: #0F172A !important;
+}
+
+html.light .text-white,
+[data-theme="light"] .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-100,
+[data-theme="light"] .text-slate-100 {
+  color: #0F172A !important;
+}
+
+html.light .text-slate-200,
+[data-theme="light"] .text-slate-200 {
+  color: #1E293B !important;
+}
+
+html.light .text-slate-300,
+[data-theme="light"] .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400,
+[data-theme="light"] .text-slate-400 {
+  color: #64748B !important;
+}
+
+html.light .text-slate-500,
+[data-theme="light"] .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+html.light .from-\[\#111827\],
+[data-theme="light"] .from-\[\#111827\] {
+  --tw-gradient-from: #FFFFFF !important;
+}
+
+html.light .to-\[\#0B0F19\],
+[data-theme="light"] .to-\[\#0B0F19\] {
+  --tw-gradient-to: #F1F5F9 !important;
+}
+
+html.light .from-cyan-950\/20,
+[data-theme="light"] .from-cyan-950\/20 {
+  --tw-gradient-from: rgba(2, 132, 199, 0.08) !important;
+}
+
+html.light .bg-cyan-950\/20,
+[data-theme="light"] .bg-cyan-950\/20 {
+  background-color: rgba(2, 132, 199, 0.08) !important;
+}
+
+/* Material 3 Surface and Card Classes */
+.m3-surface {
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+.m3-card {
+  background-color: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 1rem;
+  box-shadow: var(--md-sys-elevation-1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.m3-card:hover {
+  box-shadow: var(--md-sys-elevation-2);
+}
+
+/* Engineering blueprint grid backgrounds */
+.engineering-grid {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+}
+
+.engineering-grid-subtle {
+  background-size: 40px 40px;
+  background-image: 
+    radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--md-sys-color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-surface-container-high);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print Stylesheet for Physical Project Site Logs & A4 Reports */
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print, header, footer, aside, nav, button, input, select, textarea {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset modal overlay containers so they flow naturally over multiple pages without clipping */
+  body.print-preview-modal-active .print-modal-overlay {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body.print-preview-modal-active .print-modal-inner {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  body.print-preview-modal-active .print-modal-canvas {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .grid {
+    display: block !important;
+  }
+
+  [class*="col-span-"], [class*="lg:col-span-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  .print-card {
+    background: #ffffff !important;
+    border: none !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-text-dark {
+    color: #000000 !important;
+  }
+
+  .print-text-muted {
+    color: #333333 !important;
+  }
+
+  .print-border {
+    border-color: #000000 !important;
+  }
+
+  /* Table multi-page splitting & repeating headers */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  td, th {
+    page-break-inside: avoid !important;
+  }
+
+  .print-no-break, .break-inside-avoid, .print-sign-off {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+/* ==============================================================================
+ * Custom Engineering Accent Themes
+ * Dynamically re-themes buttons, text, borders, glows, and badges when data-accent is changed
+ * ============================================================================== */
+
+/* 0. Blueprint Cyan Accent (Default) */
+html[data-accent="cyan"], [data-accent="cyan"] {
+  --md-sys-color-primary: #38BDF8 !important;
+}
+
+/* 1. Safety Amber Accent */
+html[data-accent="amber"], [data-accent="amber"] {
+  --md-sys-color-primary: #F59E0B !important;
+}
+html[data-accent="amber"] .text-cyan-400,
+html[data-accent="amber"] .text-cyan-300,
+html[data-accent="amber"] .text-cyan-500,
+[data-accent="amber"] .text-cyan-400,
+[data-accent="amber"] .text-cyan-300,
+[data-accent="amber"] .text-cyan-500 {
+  color: #FBBF24 !important;
+}
+html[data-accent="amber"] .hover\:text-cyan-300:hover,
+html[data-accent="amber"] .hover\:text-cyan-400:hover,
+[data-accent="amber"] .hover\:text-cyan-300:hover,
+[data-accent="amber"] .hover\:text-cyan-400:hover {
+  color: #FDE68A !important;
+}
+html[data-accent="amber"] .group:hover .group-hover\:text-cyan-300,
+html[data-accent="amber"] .group:hover .group-hover\:text-cyan-400,
+[data-accent="amber"] .group:hover .group-hover\:text-cyan-300,
+[data-accent="amber"] .group:hover .group-hover\:text-cyan-400 {
+  color: #FDE68A !important;
+}
+html[data-accent="amber"] .bg-cyan-500,
+html[data-accent="amber"] .bg-cyan-400,
+[data-accent="amber"] .bg-cyan-500,
+[data-accent="amber"] .bg-cyan-400 {
+  background-color: #F59E0B !important;
+  color: #000000 !important;
+}
+html[data-accent="amber"] .hover\:bg-cyan-400:hover,
+html[data-accent="amber"] .hover\:bg-cyan-500:hover,
+[data-accent="amber"] .hover\:bg-cyan-400:hover,
+[data-accent="amber"] .hover\:bg-cyan-500:hover {
+  background-color: #FBBF24 !important;
+  color: #000000 !important;
+}
+html[data-accent="amber"] .bg-cyan-500\/10,
+html[data-accent="amber"] .bg-cyan-500\/5,
+html[data-accent="amber"] .bg-cyan-500\/15,
+html[data-accent="amber"] .bg-cyan-500\/20,
+html[data-accent="amber"] .bg-cyan-500\/25,
+html[data-accent="amber"] .bg-cyan-950\/20,
+[data-accent="amber"] .bg-cyan-500\/10,
+[data-accent="amber"] .bg-cyan-500\/5,
+[data-accent="amber"] .bg-cyan-500\/15,
+[data-accent="amber"] .bg-cyan-500\/20,
+[data-accent="amber"] .bg-cyan-500\/25,
+[data-accent="amber"] .bg-cyan-950\/20 {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+html[data-accent="amber"] .hover\:bg-cyan-500\/10:hover,
+html[data-accent="amber"] .hover\:bg-cyan-500\/20:hover,
+[data-accent="amber"] .hover\:bg-cyan-500\/10:hover,
+[data-accent="amber"] .hover\:bg-cyan-500\/20:hover {
+  background-color: rgba(245, 158, 11, 0.25) !important;
+}
+html[data-accent="amber"] .border-cyan-500\/20,
+html[data-accent="amber"] .border-cyan-500\/30,
+html[data-accent="amber"] .border-cyan-500\/40,
+html[data-accent="amber"] .border-cyan-500\/50,
+html[data-accent="amber"] .border-cyan-400,
+[data-accent="amber"] .border-cyan-500\/20,
+[data-accent="amber"] .border-cyan-500\/30,
+[data-accent="amber"] .border-cyan-500\/40,
+[data-accent="amber"] .border-cyan-500\/50,
+[data-accent="amber"] .border-cyan-400 {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+html[data-accent="amber"] .hover\:border-cyan-500\/40:hover,
+html[data-accent="amber"] .hover\:border-cyan-500\/50:hover,
+html[data-accent="amber"] .hover\:border-cyan-500\/30:hover,
+[data-accent="amber"] .hover\:border-cyan-500\/40:hover,
+[data-accent="amber"] .hover\:border-cyan-500\/50:hover,
+[data-accent="amber"] .hover\:border-cyan-500\/30:hover {
+  border-color: rgba(245, 158, 11, 0.75) !important;
+}
+html[data-accent="amber"] .group:hover .group-hover\:border-cyan-500\/40,
+[data-accent="amber"] .group:hover .group-hover\:border-cyan-500\/40 {
+  border-color: rgba(245, 158, 11, 0.75) !important;
+}
+html[data-accent="amber"] .shadow-cyan-500\/25,
+html[data-accent="amber"] .shadow-cyan-500\/20,
+html[data-accent="amber"] .shadow-cyan-500\/30,
+[data-accent="amber"] .shadow-cyan-500\/25,
+[data-accent="amber"] .shadow-cyan-500\/20,
+[data-accent="amber"] .shadow-cyan-500\/30 {
+  box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3) !important;
+}
+html[data-accent="amber"] ::selection {
+  background-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FEF3C7 !important;
+}
+
+/* 2. Rebar Orange Accent */
+html[data-accent="orange"], [data-accent="orange"] {
+  --md-sys-color-primary: #F97316 !important;
+}
+html[data-accent="orange"] .text-cyan-400,
+html[data-accent="orange"] .text-cyan-300,
+html[data-accent="orange"] .text-cyan-500,
+[data-accent="orange"] .text-cyan-400,
+[data-accent="orange"] .text-cyan-300,
+[data-accent="orange"] .text-cyan-500 {
+  color: #FB923C !important;
+}
+html[data-accent="orange"] .hover\:text-cyan-300:hover,
+html[data-accent="orange"] .hover\:text-cyan-400:hover,
+[data-accent="orange"] .hover\:text-cyan-300:hover,
+[data-accent="orange"] .hover\:text-cyan-400:hover {
+  color: #FED7AA !important;
+}
+html[data-accent="orange"] .group:hover .group-hover\:text-cyan-300,
+html[data-accent="orange"] .group:hover .group-hover\:text-cyan-400,
+[data-accent="orange"] .group:hover .group-hover\:text-cyan-300,
+[data-accent="orange"] .group:hover .group-hover\:text-cyan-400 {
+  color: #FED7AA !important;
+}
+html[data-accent="orange"] .bg-cyan-500,
+html[data-accent="orange"] .bg-cyan-400,
+[data-accent="orange"] .bg-cyan-500,
+[data-accent="orange"] .bg-cyan-400 {
+  background-color: #F97316 !important;
+  color: #000000 !important;
+}
+html[data-accent="orange"] .hover\:bg-cyan-400:hover,
+html[data-accent="orange"] .hover\:bg-cyan-500:hover,
+[data-accent="orange"] .hover\:bg-cyan-400:hover,
+[data-accent="orange"] .hover\:bg-cyan-500:hover {
+  background-color: #FB923C !important;
+  color: #000000 !important;
+}
+html[data-accent="orange"] .bg-cyan-500\/10,
+html[data-accent="orange"] .bg-cyan-500\/5,
+html[data-accent="orange"] .bg-cyan-500\/15,
+html[data-accent="orange"] .bg-cyan-500\/20,
+html[data-accent="orange"] .bg-cyan-500\/25,
+html[data-accent="orange"] .bg-cyan-950\/20,
+[data-accent="orange"] .bg-cyan-500\/10,
+[data-accent="orange"] .bg-cyan-500\/5,
+[data-accent="orange"] .bg-cyan-500\/15,
+[data-accent="orange"] .bg-cyan-500\/20,
+[data-accent="orange"] .bg-cyan-500\/25,
+[data-accent="orange"] .bg-cyan-950\/20 {
+  background-color: rgba(249, 115, 22, 0.16) !important;
+}
+html[data-accent="orange"] .hover\:bg-cyan-500\/10:hover,
+html[data-accent="orange"] .hover\:bg-cyan-500\/20:hover,
+[data-accent="orange"] .hover\:bg-cyan-500\/10:hover,
+[data-accent="orange"] .hover\:bg-cyan-500\/20:hover {
+  background-color: rgba(249, 115, 22, 0.25) !important;
+}
+html[data-accent="orange"] .border-cyan-500\/20,
+html[data-accent="orange"] .border-cyan-500\/30,
+html[data-accent="orange"] .border-cyan-500\/40,
+html[data-accent="orange"] .border-cyan-500\/50,
+html[data-accent="orange"] .border-cyan-400,
+[data-accent="orange"] .border-cyan-500\/20,
+[data-accent="orange"] .border-cyan-500\/30,
+[data-accent="orange"] .border-cyan-500\/40,
+[data-accent="orange"] .border-cyan-500\/50,
+[data-accent="orange"] .border-cyan-400 {
+  border-color: rgba(249, 115, 22, 0.45) !important;
+}
+html[data-accent="orange"] .hover\:border-cyan-500\/40:hover,
+html[data-accent="orange"] .hover\:border-cyan-500\/50:hover,
+html[data-accent="orange"] .hover\:border-cyan-500\/30:hover,
+[data-accent="orange"] .hover\:border-cyan-500\/40:hover,
+[data-accent="orange"] .hover\:border-cyan-500\/50:hover,
+[data-accent="orange"] .hover\:border-cyan-500\/30:hover {
+  border-color: rgba(249, 115, 22, 0.75) !important;
+}
+html[data-accent="orange"] .group:hover .group-hover\:border-cyan-500\/40,
+[data-accent="orange"] .group:hover .group-hover\:border-cyan-500\/40 {
+  border-color: rgba(249, 115, 22, 0.75) !important;
+}
+html[data-accent="orange"] .shadow-cyan-500\/25,
+html[data-accent="orange"] .shadow-cyan-500\/20,
+html[data-accent="orange"] .shadow-cyan-500\/30,
+[data-accent="orange"] .shadow-cyan-500\/25,
+[data-accent="orange"] .shadow-cyan-500\/20,
+[data-accent="orange"] .shadow-cyan-500\/30 {
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3) !important;
+}
+html[data-accent="orange"] ::selection {
+  background-color: rgba(249, 115, 22, 0.35) !important;
+  color: #FFEDD5 !important;
+}
+
+/* 3. Surveyor Emerald Accent */
+html[data-accent="emerald"], [data-accent="emerald"] {
+  --md-sys-color-primary: #10B981 !important;
+}
+html[data-accent="emerald"] .text-cyan-400,
+html[data-accent="emerald"] .text-cyan-300,
+html[data-accent="emerald"] .text-cyan-500,
+[data-accent="emerald"] .text-cyan-400,
+[data-accent="emerald"] .text-cyan-300,
+[data-accent="emerald"] .text-cyan-500 {
+  color: #34D399 !important;
+}
+html[data-accent="emerald"] .hover\:text-cyan-300:hover,
+html[data-accent="emerald"] .hover\:text-cyan-400:hover,
+[data-accent="emerald"] .hover\:text-cyan-300:hover,
+[data-accent="emerald"] .hover\:text-cyan-400:hover {
+  color: #A7F3D0 !important;
+}
+html[data-accent="emerald"] .group:hover .group-hover\:text-cyan-300,
+html[data-accent="emerald"] .group:hover .group-hover\:text-cyan-400,
+[data-accent="emerald"] .group:hover .group-hover\:text-cyan-300,
+[data-accent="emerald"] .group:hover .group-hover\:text-cyan-400 {
+  color: #A7F3D0 !important;
+}
+html[data-accent="emerald"] .bg-cyan-500,
+html[data-accent="emerald"] .bg-cyan-400,
+[data-accent="emerald"] .bg-cyan-500,
+[data-accent="emerald"] .bg-cyan-400 {
+  background-color: #10B981 !important;
+  color: #000000 !important;
+}
+html[data-accent="emerald"] .hover\:bg-cyan-400:hover,
+html[data-accent="emerald"] .hover\:bg-cyan-500:hover,
+[data-accent="emerald"] .hover\:bg-cyan-400:hover,
+[data-accent="emerald"] .hover\:bg-cyan-500:hover {
+  background-color: #34D399 !important;
+  color: #000000 !important;
+}
+html[data-accent="emerald"] .bg-cyan-500\/10,
+html[data-accent="emerald"] .bg-cyan-500\/5,
+html[data-accent="emerald"] .bg-cyan-500\/15,
+html[data-accent="emerald"] .bg-cyan-500\/20,
+html[data-accent="emerald"] .bg-cyan-500\/25,
+html[data-accent="emerald"] .bg-cyan-950\/20,
+[data-accent="emerald"] .bg-cyan-500\/10,
+[data-accent="emerald"] .bg-cyan-500\/5,
+[data-accent="emerald"] .bg-cyan-500\/15,
+[data-accent="emerald"] .bg-cyan-500\/20,
+[data-accent="emerald"] .bg-cyan-500\/25,
+[data-accent="emerald"] .bg-cyan-950\/20 {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+html[data-accent="emerald"] .hover\:bg-cyan-500\/10:hover,
+html[data-accent="emerald"] .hover\:bg-cyan-500\/20:hover,
+[data-accent="emerald"] .hover\:bg-cyan-500\/10:hover,
+[data-accent="emerald"] .hover\:bg-cyan-500\/20:hover {
+  background-color: rgba(16, 185, 129, 0.25) !important;
+}
+html[data-accent="emerald"] .border-cyan-500\/20,
+html[data-accent="emerald"] .border-cyan-500\/30,
+html[data-accent="emerald"] .border-cyan-500\/40,
+html[data-accent="emerald"] .border-cyan-500\/50,
+html[data-accent="emerald"] .border-cyan-400,
+[data-accent="emerald"] .border-cyan-500\/20,
+[data-accent="emerald"] .border-cyan-500\/30,
+[data-accent="emerald"] .border-cyan-500\/40,
+[data-accent="emerald"] .border-cyan-500\/50,
+[data-accent="emerald"] .border-cyan-400 {
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+html[data-accent="emerald"] .hover\:border-cyan-500\/40:hover,
+html[data-accent="emerald"] .hover\:border-cyan-500\/50:hover,
+html[data-accent="emerald"] .hover\:border-cyan-500\/30:hover,
+[data-accent="emerald"] .hover\:border-cyan-500\/40:hover,
+[data-accent="emerald"] .hover\:border-cyan-500\/50:hover,
+[data-accent="emerald"] .hover\:border-cyan-500\/30:hover {
+  border-color: rgba(16, 185, 129, 0.75) !important;
+}
+html[data-accent="emerald"] .group:hover .group-hover\:border-cyan-500\/40,
+[data-accent="emerald"] .group:hover .group-hover\:border-cyan-500\/40 {
+  border-color: rgba(16, 185, 129, 0.75) !important;
+}
+html[data-accent="emerald"] .shadow-cyan-500\/25,
+html[data-accent="emerald"] .shadow-cyan-500\/20,
+html[data-accent="emerald"] .shadow-cyan-500\/30,
+[data-accent="emerald"] .shadow-cyan-500\/25,
+[data-accent="emerald"] .shadow-cyan-500\/20,
+[data-accent="emerald"] .shadow-cyan-500\/30 {
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3) !important;
+}
+html[data-accent="emerald"] ::selection {
+  background-color: rgba(16, 185, 129, 0.35) !important;
+  color: #D1FAE5 !important;
+}
+
+/* 4. BIM Violet Accent */
+html[data-accent="purple"], [data-accent="purple"] {
+  --md-sys-color-primary: #8B5CF6 !important;
+}
+html[data-accent="purple"] .text-cyan-400,
+html[data-accent="purple"] .text-cyan-300,
+html[data-accent="purple"] .text-cyan-500,
+[data-accent="purple"] .text-cyan-400,
+[data-accent="purple"] .text-cyan-300,
+[data-accent="purple"] .text-cyan-500 {
+  color: #A78BFA !important;
+}
+html[data-accent="purple"] .hover\:text-cyan-300:hover,
+html[data-accent="purple"] .hover\:text-cyan-400:hover,
+[data-accent="purple"] .hover\:text-cyan-300:hover,
+[data-accent="purple"] .hover\:text-cyan-400:hover {
+  color: #DDD6FE !important;
+}
+html[data-accent="purple"] .group:hover .group-hover\:text-cyan-300,
+html[data-accent="purple"] .group:hover .group-hover\:text-cyan-400,
+[data-accent="purple"] .group:hover .group-hover\:text-cyan-300,
+[data-accent="purple"] .group:hover .group-hover\:text-cyan-400 {
+  color: #DDD6FE !important;
+}
+html[data-accent="purple"] .bg-cyan-500,
+html[data-accent="purple"] .bg-cyan-400,
+[data-accent="purple"] .bg-cyan-500,
+[data-accent="purple"] .bg-cyan-400 {
+  background-color: #8B5CF6 !important;
+  color: #FFFFFF !important;
+}
+html[data-accent="purple"] .hover\:bg-cyan-400:hover,
+html[data-accent="purple"] .hover\:bg-cyan-500:hover,
+[data-accent="purple"] .hover\:bg-cyan-400:hover,
+[data-accent="purple"] .hover\:bg-cyan-500:hover {
+  background-color: #A78BFA !important;
+  color: #FFFFFF !important;
+}
+html[data-accent="purple"] .bg-cyan-500\/10,
+html[data-accent="purple"] .bg-cyan-500\/5,
+html[data-accent="purple"] .bg-cyan-500\/15,
+html[data-accent="purple"] .bg-cyan-500\/20,
+html[data-accent="purple"] .bg-cyan-500\/25,
+html[data-accent="purple"] .bg-cyan-950\/20,
+[data-accent="purple"] .bg-cyan-500\/10,
+[data-accent="purple"] .bg-cyan-500\/5,
+[data-accent="purple"] .bg-cyan-500\/15,
+[data-accent="purple"] .bg-cyan-500\/20,
+[data-accent="purple"] .bg-cyan-500\/25,
+[data-accent="purple"] .bg-cyan-950\/20 {
+  background-color: rgba(139, 92, 246, 0.16) !important;
+}
+html[data-accent="purple"] .hover\:bg-cyan-500\/10:hover,
+html[data-accent="purple"] .hover\:bg-cyan-500\/20:hover,
+[data-accent="purple"] .hover\:bg-cyan-500\/10:hover,
+[data-accent="purple"] .hover\:bg-cyan-500\/20:hover {
+  background-color: rgba(139, 92, 246, 0.25) !important;
+}
+html[data-accent="purple"] .border-cyan-500\/20,
+html[data-accent="purple"] .border-cyan-500\/30,
+html[data-accent="purple"] .border-cyan-500\/40,
+html[data-accent="purple"] .border-cyan-500\/50,
+html[data-accent="purple"] .border-cyan-400,
+[data-accent="purple"] .border-cyan-500\/20,
+[data-accent="purple"] .border-cyan-500\/30,
+[data-accent="purple"] .border-cyan-500\/40,
+[data-accent="purple"] .border-cyan-500\/50,
+[data-accent="purple"] .border-cyan-400 {
+  border-color: rgba(139, 92, 246, 0.45) !important;
+}
+html[data-accent="purple"] .hover\:border-cyan-500\/40:hover,
+html[data-accent="purple"] .hover\:border-cyan-500\/50:hover,
+html[data-accent="purple"] .hover\:border-cyan-500\/30:hover,
+[data-accent="purple"] .hover\:border-cyan-500\/40:hover,
+[data-accent="purple"] .hover\:border-cyan-500\/50:hover,
+[data-accent="purple"] .hover\:border-cyan-500\/30:hover {
+  border-color: rgba(139, 92, 246, 0.75) !important;
+}
+html[data-accent="purple"] .group:hover .group-hover\:border-cyan-500\/40,
+[data-accent="purple"] .group:hover .group-hover\:border-cyan-500\/40 {
+  border-color: rgba(139, 92, 246, 0.75) !important;
+}
+html[data-accent="purple"] .shadow-cyan-500\/25,
+html[data-accent="purple"] .shadow-cyan-500\/20,
+html[data-accent="purple"] .shadow-cyan-500\/30,
+[data-accent="purple"] .shadow-cyan-500\/25,
+[data-accent="purple"] .shadow-cyan-500\/20,
+[data-accent="purple"] .shadow-cyan-500\/30 {
+  box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.3) !important;
+}
+html[data-accent="purple"] ::selection {
+  background-color: rgba(139, 92, 246, 0.35) !important;
+  color: #EDE9FE !important;
+}
+

@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "PB CivilLab — Civil Engineering Tools by Prokash Biswas",
+  "short_name": "PB CivilLab",
+  "description": "Professional Civil Engineering Software Suite by Prokash Biswas. Calculate Smarter. Build Better.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070B12",
+  "theme_color": "#070B12",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./logo-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "./logo-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "maskable"
+    }
+  ]
+}

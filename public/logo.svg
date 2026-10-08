@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" fill="none">
+  <style>
+    .wood-title {
+      font-family: 'Rye', 'Alfa Slab One', 'Georgia', serif;
+      font-size: 64px;
+      font-weight: 700;
+      fill: #F8FAFC;
+    }
+    .wood-tagline {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 3.5px;
+      fill: #22D3EE;
+    }
+  </style>
+  <text x="20" y="72" class="wood-title">PB CivilLab</text>
+  <text x="22" y="112" class="wood-tagline">CALCULATE SMARTER. BUILD BETTER.</text>
+</svg>
