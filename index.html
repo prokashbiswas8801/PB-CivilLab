@@ -3,137 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      // Early Accent Theme initialization from localStorage
-      try {
-        var savedAccent = localStorage.getItem('pb_civillab_accent_theme');
-        if (savedAccent) {
-          document.documentElement.setAttribute('data-accent', savedAccent);
-        }
-      } catch (e) {}
-    </script>
-    <script>
-      // 1. Guard against environments where window.fetch has only a getter without a setter
       (function() {
+        // 1. Multi-layer fetch writable shim (window, Window.prototype, and prototype chain)
         try {
-          var _nativeFetch = window.fetch;
-          var _activeFetch = function() {
-            return (_nativeFetch || window.fetch).apply(window, arguments);
-          };
-          Object.defineProperty(window, 'fetch', {
-            get: function() { return _activeFetch; },
+          var _origFetch = window.fetch;
+          var _activeFetch = _origFetch;
+          var desc = {
+            get: function() { return _activeFetch || window.fetch; },
             set: function(val) { _activeFetch = val; },
             configurable: true,
             enumerable: true
-          });
+          };
+
+          try { Object.defineProperty(window, 'fetch', desc); } catch (_) {}
+          try {
+            if (typeof Window !== 'undefined' && Window.prototype) {
+              Object.defineProperty(Window.prototype, 'fetch', desc);
+            }
+          } catch (_) {}
+          try {
+            var proto = Object.getPrototypeOf(window);
+            if (proto) {
+              Object.defineProperty(proto, 'fetch', desc);
+            }
+          } catch (_) {}
         } catch (_) {}
-      })();
 
-      // 2. Wrap WebSocket to gracefully handle Vite HMR in AI Studio proxy environments
-      (function() {
-        if (typeof window === 'undefined') return;
+        // 2. Suppress unhandled third-party extension injection exceptions
+        function isExtError(msg, src) {
+          var s = (String(src) + ' ' + String(msg)).toLowerCase();
+          return (
+            s.indexOf('chrome-extension://') !== -1 ||
+            s.indexOf('cannot set property fetch') !== -1 ||
+            s.indexOf('which has only a getter') !== -1 ||
+            s.indexOf('libs/requests.js') !== -1
+          );
+        }
 
-        // Suppress any console.error matching [vite] WebSocket connection attempts
-        var _origConsoleError = console.error;
-        console.error = function() {
-          var msg = arguments[0];
-          if (typeof msg === 'string' && (
-            msg.indexOf('[vite] failed to connect to websocket') !== -1 ||
-            msg.indexOf('WebSocket closed without opened') !== -1 ||
-            msg.indexOf('[vite] connecting...') !== -1
-          )) {
-            return;
-          }
-          return _origConsoleError.apply(console, arguments);
-        };
-
-        if (window.WebSocket) {
-          var NativeWebSocket = window.WebSocket;
-
-          function MockHmrWebSocket(url) {
-            this.url = String(url);
-            this.readyState = 1; // OPEN
-            this.protocol = 'vite-hmr';
-            this.bufferedAmount = 0;
-            this.extensions = '';
-            this.binaryType = 'blob';
-            this._listeners = {};
-
-            var self = this;
-            setTimeout(function() {
-              if (self.onopen) {
-                try { self.onopen({ type: 'open', target: self }); } catch (_) {}
-              }
-              var openListeners = self._listeners['open'] || [];
-              for (var i = 0; i < openListeners.length; i++) {
-                try { openListeners[i]({ type: 'open', target: self }); } catch (_) {}
-              }
-            }, 10);
-          }
-
-          MockHmrWebSocket.prototype.addEventListener = function(type, listener) {
-            if (!this._listeners[type]) this._listeners[type] = [];
-            this._listeners[type].push(listener);
-          };
-
-          MockHmrWebSocket.prototype.removeEventListener = function(type, listener) {
-            if (!this._listeners[type]) return;
-            this._listeners[type] = this._listeners[type].filter(function(l) { return l !== listener; });
-          };
-
-          MockHmrWebSocket.prototype.dispatchEvent = function() {
+        window.addEventListener('error', function(event) {
+          var msg = (event.message || (event.error && event.error.message) || '') + '';
+          var src = (event.filename || '') + '';
+          if (isExtError(msg, src)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
             return true;
-          };
-
-          MockHmrWebSocket.prototype.send = function() {};
-          MockHmrWebSocket.prototype.close = function() {
-            this.readyState = 3;
-            if (this.onclose) {
-              try { this.onclose({ wasClean: true, code: 1000, reason: 'Normal closure', target: this }); } catch (_) {}
-            }
-          };
-
-          function SafeWebSocket(url, protocols) {
-            var isHmr = (
-              protocols === 'vite-hmr' ||
-              (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1) ||
-              (typeof url === 'string' && (url.indexOf('token=') !== -1 || url.indexOf('vite-hmr') !== -1))
-            );
-            if (isHmr) {
-              return new MockHmrWebSocket(url);
-            }
-            return protocols ? new NativeWebSocket(url, protocols) : new NativeWebSocket(url);
           }
-
-          SafeWebSocket.prototype = NativeWebSocket.prototype;
-          SafeWebSocket.CONNECTING = NativeWebSocket.CONNECTING !== undefined ? NativeWebSocket.CONNECTING : 0;
-          SafeWebSocket.OPEN = NativeWebSocket.OPEN !== undefined ? NativeWebSocket.OPEN : 1;
-          SafeWebSocket.CLOSING = NativeWebSocket.CLOSING !== undefined ? NativeWebSocket.CLOSING : 2;
-          SafeWebSocket.CLOSED = NativeWebSocket.CLOSED !== undefined ? NativeWebSocket.CLOSED : 3;
-          window.WebSocket = SafeWebSocket;
-        }
-
-        function isWsError(msg) {
-          if (!msg) return false;
-          var str = String(msg).toLowerCase();
-          return str.indexOf('websocket') !== -1 || str.indexOf('ws://') !== -1 || str.indexOf('wss://') !== -1;
-        }
+        }, true);
 
         window.addEventListener('unhandledrejection', function(event) {
           var reason = event.reason;
           var msg = (reason && (reason.message || reason.stack || String(reason))) || '';
-          if (isWsError(msg)) {
+          if (isExtError(msg, '')) {
             event.preventDefault();
             event.stopImmediatePropagation();
           }
         });
 
-        window.addEventListener('error', function(event) {
-          var msg = (event.message || (event.error && event.error.message) || '') + '';
-          if (isWsError(msg)) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
+        // 3. Early Accent Theme initialization from localStorage
+        try {
+          var savedAccent = localStorage.getItem('pb_civillab_accent_theme');
+          if (savedAccent) {
+            document.documentElement.setAttribute('data-accent', savedAccent);
           }
-        }, true);
+        } catch (e) {}
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -149,10 +81,10 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="./logo-icon.svg" />
     <link rel="apple-touch-icon" href="./logo-icon.svg" />
-    <link rel="manifest" href="./manifest.json" />
   </head>
   <body class="bg-[#070B12] text-[#F8FAFC] antialiased selection:bg-cyan-500/20 selection:text-cyan-300">
     <div id="root"></div>
+    <div id="pb-civillab-print-root" style="display: none;"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

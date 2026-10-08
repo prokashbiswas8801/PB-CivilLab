@@ -1,0 +1,138 @@
+/**
+ * PB CivilLab — Canonical Engineering Report Stylesheet
+ * Author: Prokash Biswas | Calculate Smarter. Build Better.
+ *
+ * Dedicated styling for #pb-civillab-print-root and preview.
+ * Strictly guarantees zero text clipping, repeating table headers,
+ * and exact color rendering across A4 Portrait & Landscape.
+ */
+
+/* -----------------------------------------------------------------------------
+ * 1. Screen Preview Canvas (Exact A4 Proportions)
+ * ----------------------------------------------------------------------------- */
+.pb-report-sheet {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.45;
+  color-scheme: light;
+}
+
+.pb-report-sheet.portrait {
+  width: 210mm;
+  min-height: 297mm;
+}
+
+.pb-report-sheet.landscape {
+  width: 297mm;
+  min-height: 210mm;
+}
+
+.pb-report-sheet.margin-normal {
+  padding: 15mm;
+}
+
+.pb-report-sheet.margin-compact {
+  padding: 10mm;
+}
+
+/* Text Wrapping & Safety Enforcement */
+.pb-report-sheet * {
+  box-sizing: border-box;
+}
+
+.pb-report-sheet p,
+.pb-report-sheet span,
+.pb-report-sheet div,
+.pb-report-sheet td,
+.pb-report-sheet th,
+.pb-report-sheet code {
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+
+/* Clean repeating table header rules */
+.pb-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.pb-report-table thead {
+  display: table-header-group;
+}
+
+.pb-report-table tr {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+.pb-report-table td,
+.pb-report-table th {
+  padding: 5px 8px;
+  vertical-align: top;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Atomic components that should not break across pages */
+.pb-avoid-break {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+}
+
+/* -----------------------------------------------------------------------------
+ * 2. Dedicated Print Media Rules (#pb-civillab-print-root)
+ * ----------------------------------------------------------------------------- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  body.print-landscape {
+    /* Set landscape page when orientation is landscape */
+  }
+
+  /* Hide regular UI elements when printing */
+  #root,
+  .no-print,
+  nav,
+  aside,
+  header:not(.pb-report-header),
+  button {
+    display: none !important;
+  }
+
+  /* Show only the dedicated print root */
+  #pb-civillab-print-root {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+  }
+
+  .pb-report-sheet {
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    page-break-after: auto;
+  }
+
+  /* Force exact color reproduction for backgrounds & borders */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

@@ -17,6 +17,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Printer,
   X,
@@ -54,6 +55,8 @@ import {
   downloadFile,
   exportCalculationToPDF,
 } from '../../utils/exportEngine';
+import { buildReportDocument } from '../../report/buildReportDocument';
+import { EngineeringReportView } from '../../report/EngineeringReportView';
 
 export interface PrintPreviewModalProps {
   isOpen: boolean;
