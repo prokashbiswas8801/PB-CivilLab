@@ -6,9 +6,9 @@ import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(({ command }) => {
   return {
-    // Exact base path for GitHub Pages repository 'pb-civillab'
-    // Uses '/pb-civillab/' during production builds and '/' or './' during local dev
-    base: command === 'build' ? '/pb-civillab/' : '/',
+    // Relative base path ('./') or exact repo name '/PB-CivilLab/'
+    // Using './' ensures assets load correctly regardless of URL casing (PB-CivilLab vs pb-civillab)
+    base: './',
     plugins: [
       react(),
       tailwindcss(),
@@ -18,7 +18,7 @@ export default defineConfig(({ command }) => {
         registerType: 'prompt',
         includeAssets: ['favicon.ico', 'logo.svg', 'logo-icon.svg', 'manifest.json'],
         manifest: {
-          id: '/pb-civillab/',
+          id: './',
           name: 'PB CivilLab — Civil Engineering Suite',
           short_name: 'PB CivilLab',
           description: 'Professional Civil Engineering Software Suite by Prokash Biswas.',
@@ -29,7 +29,7 @@ export default defineConfig(({ command }) => {
           scope: './',
           icons: [
             {
-              src: '/logo-icon.svg',
+              src: './logo-icon.svg',
               sizes: '192x192 512x512',
               type: 'image/svg+xml',
               purpose: 'any',
@@ -75,7 +75,7 @@ export default defineConfig(({ command }) => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname ?? '.', '.'),
       },
     },
     build: {
