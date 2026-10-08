@@ -1,7 +1,7 @@
-import { CalculationResult, SurveyLevelRow } from '../types';
+import { CalculationResult, SurveyLevelRow, ValidationIssue } from '../types';
 import { DENSITIES, REBAR_STANDARD_DATA, REBAR_WEIGHT_DENOMINATOR, STEEL_DENSITY } from '../constants/engineering';
 import { formatNumber, formatCurrency } from './units';
-import { computeRebarCalculation } from './engineeringEngine';
+import { computeRebarCalculation, createInvalidResult } from './engineeringEngine';
 
 // ==========================================
 // 1. REBAR / STEEL WEIGHT & COST (SINGLE SOURCE OF TRUTH)
@@ -34,12 +34,36 @@ export function calculateBBS(
   count: number = 1,
   ratePerKg: number = 0
 ): CalculationResult {
-  const d = Math.max(1, barDiaMm);
-  const a = Math.max(0, dims.a);
-  const b = dims.b ? Math.max(0, dims.b) : 0;
-  const c = dims.c ? Math.max(0, dims.c) : 0;
-  const hook = dims.hook !== undefined ? dims.hook : 10 * d; // default 10d hook if applicable
-  const qty = Math.max(1, count);
+  const issues: ValidationIssue[] = [];
+  if (isNaN(barDiaMm) || barDiaMm <= 0) {
+    issues.push({ field: 'barDiaMm', severity: 'error', code: 'INVALID_BAR_DIA', message: 'Rebar diameter must be greater than 0 mm.' });
+  }
+  if (dims.a === undefined || isNaN(dims.a) || dims.a <= 0) {
+    issues.push({ field: 'dims.a', severity: 'error', code: 'INVALID_DIM_A', message: 'Dimension A must be greater than 0 mm.' });
+  }
+  if ((shapeType === 'l_bar' || shapeType === 'rect_stirrup' || shapeType === 'column_tie') && (dims.b === undefined || isNaN(dims.b) || dims.b <= 0)) {
+    issues.push({ field: 'dims.b', severity: 'error', code: 'INVALID_DIM_B', message: 'Dimension B must be greater than 0 mm for this shape.' });
+  }
+  if (shapeType === 'u_bar' && (dims.c === undefined || isNaN(dims.c) || dims.c <= 0)) {
+    issues.push({ field: 'dims.c', severity: 'error', code: 'INVALID_DIM_C', message: 'Dimension C must be greater than 0 mm for U-bar.' });
+  }
+  if (isNaN(count) || count < 1 || !Number.isInteger(count)) {
+    issues.push({ field: 'count', severity: 'error', code: 'INVALID_COUNT', message: 'Bar quantity must be a positive integer (≥ 1).' });
+  }
+  if (isNaN(ratePerKg) || ratePerKg < 0) {
+    issues.push({ field: 'ratePerKg', severity: 'error', code: 'INVALID_RATE', message: 'Rate per kg cannot be negative.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Bar Bending Schedule (BBS) Cutting Length', issues, 'm / bar');
+  }
+
+  const d = barDiaMm;
+  const a = dims.a;
+  const b = dims.b || 0;
+  const c = dims.c || 0;
+  const hook = dims.hook !== undefined ? dims.hook : Math.max(75, 10 * d);
+  const qty = count;
 
   let cutLengthMm = 0;
   let formulaDesc = '';
@@ -72,7 +96,15 @@ export function calculateBBS(
       break;
   }
 
-  cutLengthMm = Math.max(0, cutLengthMm);
+  if (cutLengthMm <= 0) {
+    return createInvalidResult('Bar Bending Schedule (BBS) Cutting Length', [{
+      field: 'geometry',
+      severity: 'error',
+      code: 'NEGATIVE_CUT_LENGTH',
+      message: 'Resulting cutting length is zero or negative after bend deductions. Review bar dimensions relative to diameter.',
+    }], 'm / bar');
+  }
+
   const cutLengthM = cutLengthMm / 1000;
   const totalLengthM = cutLengthM * qty;
   const unitWeightKgM = (d * d) / 162.2;
@@ -83,6 +115,8 @@ export function calculateBBS(
     title: 'Bar Bending Schedule (BBS) Cutting Length',
     primaryValue: formatNumber(cutLengthM, 3),
     primaryUnit: 'm / bar',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Cutting Length (mm)', value: `${formatNumber(cutLengthMm, 0)} mm` },
       { label: 'Total Steel Weight', value: `${formatNumber(totalWeightKg, 2)} kg` },
@@ -132,7 +166,37 @@ export function calculateConcreteVolume(
     quantity?: number;
   }
 ): CalculationResult {
-  const qty = Math.max(1, params.quantity || 1);
+  const issues: ValidationIssue[] = [];
+  const qty = params.quantity ?? 1;
+  if (isNaN(qty) || qty < 1 || !Number.isInteger(qty)) {
+    issues.push({ field: 'quantity', severity: 'error', code: 'INVALID_QUANTITY', message: 'Member quantity must be an integer ≥ 1.' });
+  }
+
+  if (shape === 'slab' || shape === 'custom_box') {
+    if (!params.lengthM || params.lengthM <= 0 || isNaN(params.lengthM)) issues.push({ field: 'lengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Length must be greater than 0 m.' });
+    if (!params.widthM || params.widthM <= 0 || isNaN(params.widthM)) issues.push({ field: 'widthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Width must be greater than 0 m.' });
+    if (!params.depthM || params.depthM <= 0 || isNaN(params.depthM)) issues.push({ field: 'depthM', severity: 'error', code: 'INVALID_DEPTH', message: 'Thickness/Depth must be greater than 0 m.' });
+  } else if (shape === 'beam') {
+    if (!params.lengthM || params.lengthM <= 0 || isNaN(params.lengthM)) issues.push({ field: 'lengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Beam span must be greater than 0 m.' });
+    if (!params.widthM || params.widthM <= 0 || isNaN(params.widthM)) issues.push({ field: 'widthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Beam width must be greater than 0 m.' });
+    if (!params.depthM || params.depthM <= 0 || isNaN(params.depthM)) issues.push({ field: 'depthM', severity: 'error', code: 'INVALID_DEPTH', message: 'Beam depth must be greater than 0 m.' });
+  } else if (shape === 'rect_column') {
+    if (!params.widthM || params.widthM <= 0 || isNaN(params.widthM)) issues.push({ field: 'widthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Column width must be greater than 0 m.' });
+    if (!params.depthM || params.depthM <= 0 || isNaN(params.depthM)) issues.push({ field: 'depthM', severity: 'error', code: 'INVALID_DEPTH', message: 'Column depth must be greater than 0 m.' });
+    if (!params.heightM || params.heightM <= 0 || isNaN(params.heightM)) issues.push({ field: 'heightM', severity: 'error', code: 'INVALID_HEIGHT', message: 'Column height must be greater than 0 m.' });
+  } else if (shape === 'circ_column') {
+    if (!params.diameterMm || params.diameterMm <= 0 || isNaN(params.diameterMm)) issues.push({ field: 'diameterMm', severity: 'error', code: 'INVALID_DIAMETER', message: 'Column diameter must be greater than 0 mm.' });
+    if (!params.heightM || params.heightM <= 0 || isNaN(params.heightM)) issues.push({ field: 'heightM', severity: 'error', code: 'INVALID_HEIGHT', message: 'Column height must be greater than 0 m.' });
+  } else if (shape === 'footing_trapezoid') {
+    if (!params.lengthM || params.lengthM <= 0 || isNaN(params.lengthM)) issues.push({ field: 'lengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Base length must be greater than 0 m.' });
+    if (!params.widthM || params.widthM <= 0 || isNaN(params.widthM)) issues.push({ field: 'widthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Base width must be greater than 0 m.' });
+    if (params.bottomHeightM === undefined || params.bottomHeightM < 0 || isNaN(params.bottomHeightM)) issues.push({ field: 'bottomHeightM', severity: 'error', code: 'INVALID_HEIGHT', message: 'Bottom vertical height must be non-negative.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Concrete Wet Volume Result', issues, 'm³');
+  }
+
   let volM3Single = 0;
   let formulaStr = '';
   let substitutedStr = '';
@@ -140,35 +204,35 @@ export function calculateConcreteVolume(
   switch (shape) {
     case 'slab':
     case 'custom_box': {
-      const l = params.lengthM || 0;
-      const w = params.widthM || 0;
-      const t = params.depthM || 0;
+      const l = params.lengthM!;
+      const w = params.widthM!;
+      const t = params.depthM!;
       volM3Single = l * w * t;
       formulaStr = 'V = Length × Width × Thickness';
       substitutedStr = `V = ${l} × ${w} × ${t} = ${formatNumber(volM3Single, 4)} m³`;
       break;
     }
     case 'beam': {
-      const l = params.lengthM || 0;
-      const w = params.widthM || 0;
-      const d = params.depthM || 0;
+      const l = params.lengthM!;
+      const w = params.widthM!;
+      const d = params.depthM!;
       volM3Single = l * w * d;
       formulaStr = 'V = Length × Width × Depth';
       substitutedStr = `V = ${l} × ${w} × ${d} = ${formatNumber(volM3Single, 4)} m³`;
       break;
     }
     case 'rect_column': {
-      const w = params.widthM || 0;
-      const d = params.depthM || 0;
-      const h = params.heightM || 0;
+      const w = params.widthM!;
+      const d = params.depthM!;
+      const h = params.heightM!;
       volM3Single = w * d * h;
       formulaStr = 'V = Width × Depth × Height';
       substitutedStr = `V = ${w} × ${d} × ${h} = ${formatNumber(volM3Single, 4)} m³`;
       break;
     }
     case 'circ_column': {
-      const diaM = (params.diameterMm || 0) / 1000;
-      const h = params.heightM || 0;
+      const diaM = params.diameterMm! / 1000;
+      const h = params.heightM!;
       const r = diaM / 2;
       volM3Single = Math.PI * r * r * h;
       formulaStr = 'V = π × (D / 2)² × Height';
@@ -176,14 +240,12 @@ export function calculateConcreteVolume(
       break;
     }
     case 'footing_trapezoid': {
-      // Sloped isolated footing: Lower box + Upper truncated pyramid
-      const L1 = params.lengthM || 0;
-      const B1 = params.widthM || 0;
-      const h1 = params.bottomHeightM || 0; // vertical edge height
-
+      const L1 = params.lengthM!;
+      const B1 = params.widthM!;
+      const h1 = params.bottomHeightM || 0;
       const L2 = params.topLengthM || 0;
       const B2 = params.topWidthM || 0;
-      const h2 = params.trapezoidHeightM || 0; // sloped height
+      const h2 = params.trapezoidHeightM || 0;
 
       const V_bottom = L1 * B1 * h1;
       const A1 = L1 * B1;
@@ -204,6 +266,8 @@ export function calculateConcreteVolume(
     title: 'Concrete Wet Volume Result',
     primaryValue: formatNumber(totalVolM3, 3),
     primaryUnit: 'm³',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Volume in CFT', value: formatNumber(totalVolCFT, 2), unit: 'CFT' },
       { label: 'Total Members', value: `${qty} pcs` },
@@ -241,14 +305,35 @@ export function calculateConcreteMix(
   wastagePct: number = 3,
   cementDensity: number = DENSITIES.cement
 ): CalculationResult {
-  const wetVol = Math.max(0, wetVolM3);
-  const factor = Math.max(1, dryFactor);
-  const waste = Math.max(0, wastagePct);
-  const bagSize = Math.max(1, bagSizeKg);
+  const issues: ValidationIssue[] = [];
+  if (isNaN(wetVolM3) || wetVolM3 <= 0) {
+    issues.push({ field: 'wetVolM3', severity: 'error', code: 'INVALID_VOLUME', message: 'Wet concrete volume must be greater than 0 m³.' });
+  }
+  const sumRatio = ratioC + ratioS + ratioA;
+  if (isNaN(sumRatio) || sumRatio <= 0 || ratioC <= 0 || ratioS < 0 || ratioA < 0) {
+    issues.push({ field: 'mixRatio', severity: 'error', code: 'INVALID_RATIO', message: 'Mix proportions must be positive and their sum must exceed zero.' });
+  }
+  if (isNaN(dryFactor) || dryFactor <= 0) {
+    issues.push({ field: 'dryFactor', severity: 'error', code: 'INVALID_DRY_FACTOR', message: 'Dry volume factor must be positive.' });
+  }
+  if (isNaN(bagSizeKg) || bagSizeKg <= 0) {
+    issues.push({ field: 'bagSizeKg', severity: 'error', code: 'INVALID_BAG_SIZE', message: 'Cement bag mass must be greater than 0 kg.' });
+  }
+  if (isNaN(wastagePct) || wastagePct < 0) {
+    issues.push({ field: 'wastagePct', severity: 'error', code: 'INVALID_WASTAGE', message: 'Wastage percentage cannot be negative.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Concrete Material Mix Estimation', issues, bagSizeKg === 50 ? 'Bags (50 kg)' : `Bags (${bagSizeKg} kg)`);
+  }
+
+  const wetVol = wetVolM3;
+  const factor = dryFactor;
+  const waste = wastagePct;
+  const bagSize = bagSizeKg;
 
   // Dry Volume including wastage
   const dryVolM3 = wetVol * factor * (1 + waste / 100);
-  const sumRatio = ratioC + ratioS + ratioA;
 
   // Material Volumes
   const cementVolM3 = dryVolM3 * (ratioC / sumRatio);
@@ -271,6 +356,8 @@ export function calculateConcreteMix(
     title: 'Concrete Material Mix Estimation',
     primaryValue: formatNumber(cementBags, 1),
     primaryUnit: bagSize === 50 ? 'Bags (50 kg)' : `Bags (${bagSize % 1 === 0 ? bagSize : bagSize.toFixed(1)} kg)`,
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Cement Total Mass', value: `${formatNumber(cementMassKg, 0)} kg (${formatNumber(cementBags, 2)} bags)` },
       { label: 'Sand Volume', value: `${formatNumber(sandCFT, 1)} CFT (${formatNumber(sandVolM3, 3)} m³)` },
@@ -319,9 +406,27 @@ export function calculateBrickwork(
   mortarRatioS: number = 5,
   wastagePct: number = 5
 ): CalculationResult {
-  const l = Math.max(0, wallLengthM);
-  const h = Math.max(0, wallHeightM);
-  const t = Math.max(0, wallThicknessM);
+  const issues: ValidationIssue[] = [];
+  if (isNaN(wallLengthM) || wallLengthM <= 0) issues.push({ field: 'wallLengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Wall length must be greater than 0 m.' });
+  if (isNaN(wallHeightM) || wallHeightM <= 0) issues.push({ field: 'wallHeightM', severity: 'error', code: 'INVALID_HEIGHT', message: 'Wall height must be greater than 0 m.' });
+  if (isNaN(wallThicknessM) || wallThicknessM <= 0) issues.push({ field: 'wallThicknessM', severity: 'error', code: 'INVALID_THICKNESS', message: 'Wall thickness must be greater than 0 m.' });
+  if (isNaN(brickL_Mm) || brickL_Mm <= 0 || isNaN(brickW_Mm) || brickW_Mm <= 0 || isNaN(brickH_Mm) || brickH_Mm <= 0) {
+    issues.push({ field: 'brickDimensions', severity: 'error', code: 'INVALID_BRICK_DIM', message: 'Brick dimensions must be greater than 0 mm.' });
+  }
+  if (isNaN(mortarJointMm) || mortarJointMm < 0) {
+    issues.push({ field: 'mortarJointMm', severity: 'error', code: 'INVALID_JOINT', message: 'Mortar joint thickness cannot be negative.' });
+  }
+  if (isNaN(mortarRatioC) || isNaN(mortarRatioS) || mortarRatioC <= 0 || mortarRatioS <= 0) {
+    issues.push({ field: 'mortarRatio', severity: 'error', code: 'INVALID_MORTAR_RATIO', message: 'Mortar ratio parts must be greater than zero.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Brickwork & Mortar Estimation', issues, 'Bricks (Nos)');
+  }
+
+  const l = wallLengthM;
+  const h = wallHeightM;
+  const t = wallThicknessM;
 
   const grossWallVolM3 = l * h * t;
   const deductionVolM3 = Math.max(0, openingsAreaM2) * t;
@@ -361,6 +466,8 @@ export function calculateBrickwork(
     title: 'Brickwork & Mortar Estimation',
     primaryValue: formatNumber(totalBrickCountWithWaste, 0),
     primaryUnit: 'Bricks (Nos)',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Net Wall Volume', value: `${formatNumber(netWallVolM3, 3)} m³ (${formatNumber(netWallVolM3 * 35.3147, 1)} CFT)` },
       { label: 'Cement Bags (50kg)', value: `${formatNumber(cementBags, 1)} Bags` },
@@ -405,8 +512,18 @@ export function calculatePlaster(
   dryFactor: number = 1.33,
   wastagePct: number = 5
 ): CalculationResult {
-  const area = Math.max(0, areaM2);
-  const thkM = Math.max(1, thicknessMm) / 1000;
+  const issues: ValidationIssue[] = [];
+  if (isNaN(areaM2) || areaM2 <= 0) issues.push({ field: 'areaM2', severity: 'error', code: 'INVALID_AREA', message: 'Plaster surface area must be greater than 0 m².' });
+  if (isNaN(thicknessMm) || thicknessMm <= 0) issues.push({ field: 'thicknessMm', severity: 'error', code: 'INVALID_THICKNESS', message: 'Plaster thickness must be greater than 0 mm.' });
+  if (isNaN(ratioC) || isNaN(ratioS) || ratioC <= 0 || ratioS <= 0) issues.push({ field: 'mortarRatio', severity: 'error', code: 'INVALID_RATIO', message: 'Mortar ratio parts must be greater than zero.' });
+  if (isNaN(dryFactor) || dryFactor <= 0) issues.push({ field: 'dryFactor', severity: 'error', code: 'INVALID_DRY_FACTOR', message: 'Dry factor must be positive.' });
+
+  if (issues.length > 0) {
+    return createInvalidResult('Plaster Material Calculation', issues, 'Bags Cement (50kg)');
+  }
+
+  const area = areaM2;
+  const thkM = thicknessMm / 1000;
 
   const wetVolM3 = area * thkM;
   const dryVolM3 = wetVolM3 * dryFactor * (1 + wastagePct / 100);
@@ -423,6 +540,8 @@ export function calculatePlaster(
     title: 'Plaster Material Calculation',
     primaryValue: formatNumber(cementBags, 1),
     primaryUnit: 'Bags Cement (50kg)',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Sand Volume', value: `${formatNumber(sandCFT, 1)} CFT (${formatNumber(sandVolM3, 3)} m³)` },
       { label: 'Plaster Surface Area', value: `${formatNumber(area, 2)} m² (${formatNumber(area * 10.7639, 1)} sq.ft)` },
@@ -696,9 +815,19 @@ export function calculateSlab(
   thicknessMm: number,
   prelimSteelPct: number = 0.8
 ): CalculationResult {
-  const l = Math.max(0, lengthM);
-  const w = Math.max(0, widthM);
-  const thkM = Math.max(1, thicknessMm) / 1000;
+  const issues: ValidationIssue[] = [];
+  if (isNaN(lengthM) || lengthM <= 0) issues.push({ field: 'lengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Slab length must be greater than 0 m.' });
+  if (isNaN(widthM) || widthM <= 0) issues.push({ field: 'widthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Slab width must be greater than 0 m.' });
+  if (isNaN(thicknessMm) || thicknessMm <= 0) issues.push({ field: 'thicknessMm', severity: 'error', code: 'INVALID_THICKNESS', message: 'Slab thickness must be greater than 0 mm.' });
+  if (isNaN(prelimSteelPct) || prelimSteelPct < 0) issues.push({ field: 'prelimSteelPct', severity: 'error', code: 'INVALID_STEEL_PCT', message: 'Preliminary steel percentage cannot be negative.' });
+
+  if (issues.length > 0) {
+    return createInvalidResult('Slab Concrete & Behavior Helper', issues, 'm³ Concrete');
+  }
+
+  const l = lengthM;
+  const w = widthM;
+  const thkM = thicknessMm / 1000;
 
   const longerSpan = Math.max(l, w);
   const shorterSpan = Math.min(l, w);
@@ -718,6 +847,8 @@ export function calculateSlab(
     title: 'Slab Concrete & Behavior Helper',
     primaryValue: formatNumber(volM3, 3),
     primaryUnit: 'm³ Concrete',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Volume in CFT', value: `${formatNumber(volCFT, 2)} CFT` },
       { label: 'Classification', value: isOneWay ? 'ONE-WAY SLAB' : 'TWO-WAY SLAB' },
@@ -756,26 +887,39 @@ export function calculateBeam(
   stirrupSpacingMm: number = 150,
   stirrupDiaMm: number = 8
 ): CalculationResult {
-  const l = Math.max(0, lengthM);
-  const bM = Math.max(1, widthMm) / 1000;
-  const dM = Math.max(1, depthMm) / 1000;
-  const coverM = Math.max(0, clearCoverMm) / 1000;
+  const issues: ValidationIssue[] = [];
+  if (isNaN(lengthM) || lengthM <= 0) issues.push({ field: 'lengthM', severity: 'error', code: 'INVALID_LENGTH', message: 'Beam span must be greater than 0 m.' });
+  if (isNaN(widthMm) || widthMm <= 0) issues.push({ field: 'widthMm', severity: 'error', code: 'INVALID_WIDTH', message: 'Beam width must be greater than 0 mm.' });
+  if (isNaN(depthMm) || depthMm <= 0) issues.push({ field: 'depthMm', severity: 'error', code: 'INVALID_DEPTH', message: 'Beam depth must be greater than 0 mm.' });
+  if (isNaN(clearCoverMm) || clearCoverMm < 0 || clearCoverMm * 2 >= widthMm || clearCoverMm * 2 >= depthMm) {
+    issues.push({ field: 'clearCoverMm', severity: 'error', code: 'INVALID_COVER', message: 'Clear cover is invalid or exceeds beam dimensions.' });
+  }
+  if (isNaN(stirrupSpacingMm) || stirrupSpacingMm <= 0) {
+    issues.push({ field: 'stirrupSpacingMm', severity: 'error', code: 'INVALID_SPACING', message: 'Stirrup spacing must be greater than 0 mm.' });
+  }
+  if (isNaN(stirrupDiaMm) || stirrupDiaMm <= 0) {
+    issues.push({ field: 'stirrupDiaMm', severity: 'error', code: 'INVALID_STIRRUP_DIA', message: 'Stirrup diameter must be greater than 0 mm.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Beam Concrete & Formwork Estimator', issues, 'm³ Concrete');
+  }
+
+  const l = lengthM;
+  const bM = widthMm / 1000;
+  const dM = depthMm / 1000;
+  const coverM = clearCoverMm / 1000;
 
   const volM3 = l * bM * dM;
   const volCFT = volM3 * 35.3147;
 
-  // Formwork area for typical beam: bottom soffit + two side faces
-  // (Top is cast flush or slab)
   const formworkAreaM2 = (bM + 2 * dM) * l;
   const formworkAreaSqFt = formworkAreaM2 * 10.7639;
 
-  // Stirrup count: (Length - 2*cover) / spacing + 1
-  const spacingM = Math.max(10, stirrupSpacingMm) / 1000;
+  const spacingM = stirrupSpacingMm / 1000;
   const effLengthM = Math.max(0, l - 2 * coverM);
   const stirrupCount = Math.floor(effLengthM / spacingM) + 1;
 
-  // Approximate single stirrup cutting length
-  // 2*(b_core + d_core) + 2*hook
   const bCore = Math.max(0, widthMm - 2 * clearCoverMm);
   const dCore = Math.max(0, depthMm - 2 * clearCoverMm);
   const hookLen = Math.max(75, 10 * stirrupDiaMm);
@@ -786,6 +930,8 @@ export function calculateBeam(
     title: 'Beam Concrete & Formwork Estimator',
     primaryValue: formatNumber(volM3, 3),
     primaryUnit: 'm³ Concrete',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Volume in CFT', value: `${formatNumber(volCFT, 2)} CFT` },
       { label: 'Formwork / Shuttering Area', value: `${formatNumber(formworkAreaM2, 2)} m² (${formatNumber(formworkAreaSqFt, 1)} sq.ft)` },
@@ -831,21 +977,37 @@ export function calculateColumn(
     rebarPct?: number;
   }
 ): CalculationResult {
-  const h = Math.max(0, heightM);
-  const tieSpacingMm = Math.max(50, params.tieSpacingMm || 150);
-  const tieDiaMm = params.tieDiaMm || 8;
-  const rebarPct = params.rebarPct || 2.0;
+  const issues: ValidationIssue[] = [];
+  if (isNaN(heightM) || heightM <= 0) issues.push({ field: 'heightM', severity: 'error', code: 'INVALID_HEIGHT', message: 'Column height must be greater than 0 m.' });
+  if (shape === 'rectangular') {
+    if (!params.widthMm || params.widthMm <= 0 || isNaN(params.widthMm)) issues.push({ field: 'widthMm', severity: 'error', code: 'INVALID_WIDTH', message: 'Column width must be greater than 0 mm.' });
+    if (!params.depthMm || params.depthMm <= 0 || isNaN(params.depthMm)) issues.push({ field: 'depthMm', severity: 'error', code: 'INVALID_DEPTH', message: 'Column depth must be greater than 0 mm.' });
+  } else {
+    if (!params.diameterMm || params.diameterMm <= 0 || isNaN(params.diameterMm)) issues.push({ field: 'diameterMm', severity: 'error', code: 'INVALID_DIAMETER', message: 'Column diameter must be greater than 0 mm.' });
+  }
+  if (params.rebarPct !== undefined && (params.rebarPct < 0 || isNaN(params.rebarPct))) {
+    issues.push({ field: 'rebarPct', severity: 'error', code: 'INVALID_REBAR_PCT', message: 'Rebar percentage cannot be negative.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Column Concrete & Formwork Helper', issues, 'm³ Concrete');
+  }
+
+  const h = heightM;
+  const tieSpacingMm = params.tieSpacingMm && params.tieSpacingMm > 0 ? params.tieSpacingMm : 150;
+  const tieDiaMm = params.tieDiaMm && params.tieDiaMm > 0 ? params.tieDiaMm : 8;
+  const rebarPct = params.rebarPct !== undefined ? params.rebarPct : 2.0;
 
   let volM3 = 0;
   let formworkM2 = 0;
 
   if (shape === 'rectangular') {
-    const bM = (params.widthMm || 300) / 1000;
-    const dM = (params.depthMm || 300) / 1000;
+    const bM = params.widthMm! / 1000;
+    const dM = params.depthMm! / 1000;
     volM3 = bM * dM * h;
     formworkM2 = 2 * (bM + dM) * h;
   } else {
-    const diaM = (params.diameterMm || 300) / 1000;
+    const diaM = params.diameterMm! / 1000;
     const r = diaM / 2;
     volM3 = Math.PI * r * r * h;
     formworkM2 = Math.PI * diaM * h;
@@ -865,6 +1027,8 @@ export function calculateColumn(
     title: 'Column Concrete & Formwork Helper',
     primaryValue: formatNumber(volM3, 3),
     primaryUnit: 'm³ Concrete',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Volume in CFT', value: `${formatNumber(volCFT, 2)} CFT` },
       { label: 'Shuttering Area (4 Sides)', value: `${formatNumber(formworkM2, 2)} m² (${formatNumber(formworkSqFt, 1)} sq.ft)` },
@@ -903,16 +1067,30 @@ export function calculateStaircase(
   stairWidthM: number = 1.0,
   waistThkMm: number = 150
 ): CalculationResult {
-  const h = Math.max(1, floorHeightMm);
-  const r = Math.max(1, riserMm);
-  const t = Math.max(1, treadMm);
-  const w = Math.max(0.5, stairWidthM);
-  const waistThkM = Math.max(1, waistThkMm) / 1000;
+  const issues: ValidationIssue[] = [];
+  if (isNaN(floorHeightMm) || floorHeightMm <= 0) issues.push({ field: 'floorHeightMm', severity: 'error', code: 'INVALID_HEIGHT', message: 'Floor height must be greater than 0 mm.' });
+  if (isNaN(riserMm) || riserMm <= 0) issues.push({ field: 'riserMm', severity: 'error', code: 'INVALID_RISER', message: 'Target riser must be greater than 0 mm.' });
+  if (isNaN(treadMm) || treadMm <= 0) issues.push({ field: 'treadMm', severity: 'error', code: 'INVALID_TREAD', message: 'Tread depth must be greater than 0 mm.' });
+  if (isNaN(stairWidthM) || stairWidthM <= 0) issues.push({ field: 'stairWidthM', severity: 'error', code: 'INVALID_WIDTH', message: 'Staircase flight width must be greater than 0 m.' });
+  if (isNaN(waistThkMm) || waistThkMm <= 0) issues.push({ field: 'waistThkMm', severity: 'error', code: 'INVALID_THICKNESS', message: 'Waist slab thickness must be greater than 0 mm.' });
+  if (floorHeightMm > 0 && riserMm > 0 && floorHeightMm < riserMm) {
+    issues.push({ field: 'geometry', severity: 'error', code: 'IMPOSSIBLE_STAIR', message: 'Floor-to-floor height cannot be less than a single riser.' });
+  }
+
+  if (issues.length > 0) {
+    return createInvalidResult('Staircase Geometry & Concrete Volume', issues, 'Risers');
+  }
+
+  const h = floorHeightMm;
+  const r = riserMm;
+  const t = treadMm;
+  const w = stairWidthM;
+  const waistThkM = waistThkMm / 1000;
 
   // Number of risers
-  const numRisers = Math.round(h / r);
+  const numRisers = Math.max(1, Math.round(h / r));
   const actualRiserMm = h / numRisers;
-  const numTreads = numRisers - 1; // standard straight flight: 1 less tread than riser
+  const numTreads = Math.max(1, numRisers - 1); // standard straight flight: 1 less tread than riser
 
   // Total going (horizontal run of steps)
   const totalGoingMm = numTreads * t;
@@ -937,6 +1115,8 @@ export function calculateStaircase(
     title: 'Staircase Geometry & Concrete Volume',
     primaryValue: formatNumber(numRisers, 0),
     primaryUnit: 'Risers',
+    status: 'valid',
+    validationIssues: [],
     secondaryValues: [
       { label: 'Number of Treads', value: `${numTreads} treads (@ ${t} mm)` },
       { label: 'Actual Riser Height', value: `${formatNumber(actualRiserMm, 1)} mm` },

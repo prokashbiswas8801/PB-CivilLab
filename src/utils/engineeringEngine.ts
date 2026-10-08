@@ -13,7 +13,7 @@
  *    No artificial project names, drawings, or approval statuses.
  */
 
-import { CalculationResult, CalculationTraceStep, EngineeringBasis, ReportProjectMeta } from '../types';
+import { CalculationResult, CalculationTraceStep, EngineeringBasis, ReportProjectMeta, ValidationIssue, CalculationStatus } from '../types';
 import { REBAR_WEIGHT_DENOMINATOR, STEEL_DENSITY } from '../constants/engineering';
 import { formatNumber, formatCurrency } from './units';
 
@@ -45,6 +45,35 @@ export interface RebarRawCalculation {
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
+}
+
+/**
+ * Standard factory for returning safely rejected engineering calculation results.
+ * Never silently repairs invalid engineering inputs.
+ */
+export function createInvalidResult(
+  title: string,
+  issues: ValidationIssue[],
+  primaryUnit: string = ''
+): CalculationResult {
+  return {
+    title,
+    primaryValue: '—',
+    primaryUnit,
+    status: 'invalid',
+    validationIssues: issues,
+    warnings: issues.filter(i => i.severity === 'warning').map(i => i.message),
+    breakdown: issues.map(i => ({
+      step: `Validation Check: ${i.field}`,
+      expression: i.code,
+      result: i.message,
+    })),
+    formula: 'Calculation blocked: input parameters violate physical or engineering constraints.',
+    substitutedFormula: issues.map(i => i.message).join(' | '),
+    inputsSummary: [],
+    assumptions: [],
+    engineeringNotes: 'Please correct identified parameter errors to evaluate accurate civil engineering computations.',
+  };
 }
 
 /**
@@ -103,10 +132,20 @@ export function computeRebarCalculation(params: RebarInputParams): CalculationRe
 
   const validation = validateRebarInputs(diameterMm, lengthPerBarM, quantity, ratePerKg);
 
-  const d = Math.max(0, diameterMm);
-  const l = Math.max(0, lengthPerBarM);
-  const qty = Math.max(1, Math.round(quantity));
-  const rate = Math.max(0, ratePerKg);
+  if (!validation.isValid) {
+    const issues: ValidationIssue[] = validation.errors.map(err => ({
+      field: 'rebar',
+      severity: 'error',
+      code: 'INVALID_REBAR_INPUT',
+      message: err,
+    }));
+    return createInvalidResult('Rebar / Steel Weight Calculation', issues, 'kg');
+  }
+
+  const d = diameterMm;
+  const l = lengthPerBarM;
+  const qty = quantity;
+  const rate = ratePerKg;
 
   // 1. Raw Engineering Calculations (FULL PRECISION - NEVER ROUND INTERMEDIATES)
   let unitWeightRaw = 0;
@@ -217,6 +256,8 @@ export function computeRebarCalculation(params: RebarInputParams): CalculationRe
     title: 'Rebar / Steel Weight Calculation',
     primaryValue: totalWeightFormatted,
     primaryUnit: 'kg',
+    status: 'valid',
+    validationIssues: [],
     primaryCategory: 'mass',
     primaryRawValue: totalWeightRaw,
     secondaryValues,

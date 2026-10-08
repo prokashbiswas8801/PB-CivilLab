@@ -5,10 +5,11 @@ import {defineConfig} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(({ command }) => {
+  // Configured base path for GitHub Pages (/PB-CivilLab/) with environment override support
+  const basePath = process.env.BASE_PATH || (command === 'build' ? '/PB-CivilLab/' : '/');
+
   return {
-    // Relative base path ('./') or exact repo name '/PB-CivilLab/'
-    // Using './' ensures assets load correctly regardless of URL casing (PB-CivilLab vs pb-civillab)
-    base: './',
+    base: basePath,
     plugins: [
       react(),
       tailwindcss(),
@@ -16,20 +17,20 @@ export default defineConfig(({ command }) => {
         // "prompt" tells the service worker NOT to take over automatically with skipWaiting,
         // allowing the UI to prompt the user before reloading.
         registerType: 'prompt',
-        includeAssets: ['favicon.ico', 'logo.svg', 'logo-icon.svg', 'manifest.json'],
+        includeAssets: ['favicon.ico', 'logo.svg', 'logo-icon.svg', 'robots.txt'],
         manifest: {
-          id: './',
+          id: basePath,
           name: 'PB CivilLab — Civil Engineering Suite',
           short_name: 'PB CivilLab',
           description: 'Professional Civil Engineering Software Suite by Prokash Biswas.',
           theme_color: '#0f172a',
           background_color: '#0b0f17',
           display: 'standalone',
-          start_url: './',
-          scope: './',
+          start_url: basePath,
+          scope: basePath,
           icons: [
             {
-              src: './logo-icon.svg',
+              src: `${basePath}logo-icon.svg`.replace(/\/\//g, '/'),
               sizes: '192x192 512x512',
               type: 'image/svg+xml',
               purpose: 'any',
@@ -78,14 +79,9 @@ export default defineConfig(({ command }) => {
         '@': path.resolve(import.meta.dirname ?? '.', '.'),
       },
     },
+    // Standard Vite content-hashed asset naming for production builds
     build: {
-      rollupOptions: {
-        output: {
-          entryFileNames: 'assets/[name].js',
-          chunkFileNames: 'assets/[name].js',
-          assetFileNames: 'assets/[name].[ext]',
-        },
-      },
+      chunkSizeWarningLimit: 1200,
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

@@ -90,10 +90,22 @@ export interface ReportProjectMeta {
   showEmptyFields?: boolean;
 }
 
+export type CalculationStatus = 'valid' | 'warning' | 'invalid';
+
+export interface ValidationIssue {
+  field: string;
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+}
+
 export interface CalculationResult {
   title: string;
   primaryValue: string;
   primaryUnit: string;
+  status?: CalculationStatus;
+  validationIssues?: ValidationIssue[];
+  warnings?: string[];
   primaryCategory?: string;
   primaryRawValue?: number;
   secondaryValues?: { label: string; value: string; unit?: string; category?: string; rawValue?: number }[];
