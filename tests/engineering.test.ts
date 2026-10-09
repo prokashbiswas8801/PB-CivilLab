@@ -543,6 +543,25 @@ assert(landscapeMultiPage.getNumberOfPages() >= 2, `Landscape report dynamically
 const landscapeBytes = landscapeMultiPage.output('arraybuffer');
 assert(landscapeBytes.byteLength > 5000, 'Landscape multi-page PDF produces non-empty byte stream');
 
+// 9.5b Strict 1-Page Summary Mode: forces even longResult to exactly 1 page
+const fitOnePagePdf = exportCalculationToPDF(longResult, {
+  fitToOnePage: true,
+  autoDownload: false,
+});
+assertStrictEqual(fitOnePagePdf.getNumberOfPages(), 1, 'fitToOnePage forces extensive report strictly onto 1 page');
+const fitOnePageBytes = fitOnePagePdf.output('arraybuffer');
+assert(fitOnePageBytes.byteLength > 2000, 'fitToOnePage produces non-empty byte stream');
+
+// 9.5c Strict 1-Page Summary Mode in Landscape
+const fitOnePageLandscape = exportCalculationToPDF(longResult, {
+  fitToOnePage: true,
+  orientation: 'landscape',
+  autoDownload: false,
+});
+assertStrictEqual(fitOnePageLandscape.getNumberOfPages(), 1, 'fitToOnePage Landscape strictly adheres to 1 page');
+const fitOnePageLandBytes = fitOnePageLandscape.output('arraybuffer');
+assert(fitOnePageLandBytes.byteLength > 2000, 'fitToOnePage Landscape produces non-empty byte stream');
+
 // 9.6 Excel Spreadsheet Export (UTF-8 BOM validation)
 const excelOutput = generateExcelReport(test1, {
   documentNumber: 'PBCL-EXCEL-01',

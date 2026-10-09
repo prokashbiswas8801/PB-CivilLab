@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -77,6 +77,7 @@ app.all('/api/*', (_req: Request, res: Response) => {
 // ==============================================================================
 async function setupViteOrStatic() {
   if (process.env.NODE_ENV === 'production') {
+    app.use('/PB-CivilLab', express.static(path.join(__dirname, 'dist')));
     app.use(express.static(path.join(__dirname, 'dist')));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));

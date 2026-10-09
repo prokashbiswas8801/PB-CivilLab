@@ -71,6 +71,19 @@ export const DEFAULT_REPORT_SECTIONS: ReportSectionOptions = {
   showVerification: true,
 };
 
+export interface UserProfile {
+  engineerName: string;
+  designation?: string;
+  licenseNumber?: string;
+  companyName?: string;
+  email?: string;
+  phone?: string;
+  companyAddress?: string;
+  notes?: string;
+  autoIncludePreparedBy?: boolean;
+  roleType?: string;
+}
+
 export interface ReportProjectMeta {
   projectName?: string;
   projectId?: string;
@@ -88,6 +101,8 @@ export interface ReportProjectMeta {
   reportStatus?: ReportStatus;
   date?: string;
   showEmptyFields?: boolean;
+  engineerDesignation?: string;
+  engineerLicense?: string;
 }
 
 export type CalculationStatus = 'valid' | 'warning' | 'invalid';
@@ -177,6 +192,7 @@ export interface AppSettings {
   unitPreferences?: UnitPreferences;
   bangladeshProfileActive?: boolean;
   customUnits?: CustomUnit[];
+  userProfile?: UserProfile;
 }
 
 export interface BOQItem {

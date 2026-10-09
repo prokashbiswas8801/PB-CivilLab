@@ -27,8 +27,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { TOOLS_CATALOG } from '../constants/engineering';
-import { Tool, ToolCategory, HistoryItem } from '../types';
+import { Tool, ToolCategory, HistoryItem, ProjectWorkspace, AppSettings } from '../types';
 import { Logo } from './Logo';
+import { ProjectExecutiveSummary } from './ProjectExecutiveSummary';
 import {
   BeamColumnJointMotif,
   RebarCrossSectionMotif,
@@ -43,6 +44,10 @@ interface DashboardProps {
   history?: HistoryItem[];
   onOpenHistory?: () => void;
   initialShowFavorites?: boolean;
+  activeProject?: ProjectWorkspace;
+  onOpenProjectWorkspace?: () => void;
+  onAddSampleCalculations?: () => void;
+  settings?: AppSettings;
 }
 
 const FIELD_PRO_TIPS = [
@@ -207,6 +212,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   history = [],
   onOpenHistory,
   initialShowFavorites = false,
+  activeProject,
+  onOpenProjectWorkspace,
+  onAddSampleCalculations,
+  settings,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<ToolCategory>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -562,6 +571,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ))}
           </div>
         </section>
+      )}
+
+      {/* 1.8 Project Executive Summary Widget */}
+      {activeProject && (
+        <ProjectExecutiveSummary
+          project={activeProject}
+          onNavigate={onNavigate}
+          onOpenWorkspaceModal={onOpenProjectWorkspace}
+          onAddSampleCalculations={onAddSampleCalculations}
+          settings={settings}
+        />
       )}
 
       {/* 2. Quick Actions (Section 4) */}

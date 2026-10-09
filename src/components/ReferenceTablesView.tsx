@@ -1,20 +1,134 @@
 import React from 'react';
-import { Table, Layers, Grid } from 'lucide-react';
+import { Table, Layers, Grid, Download } from 'lucide-react';
 import { DENSITIES, REBAR_STANDARD_DATA } from '../constants/engineering';
 import { formatNumber } from '../utils/units';
+import { CalculationResult } from '../types';
+import { exportCalculationToPDF } from '../utils/pdfExport';
+import { useToast } from './Common/Toast';
 
 export const ReferenceTablesView: React.FC = () => {
+  const toast = useToast();
+
+  const handleExportRebarPDF = () => {
+    try {
+      const rebarResult: CalculationResult = {
+        title: 'Standard Steel Rebar Mechanical & Weight Schedule',
+        primaryValue: '8 - 40',
+        primaryUnit: 'Ø mm Range',
+        primaryCategory: 'Rebar Specification Reference',
+        formula: 'W = D² / 162.2 (kg/m)',
+        substitutedFormula: 'BDS 1313:2008 / ASTM A615 / IS 1786 Standard Unit Weights',
+        inputsSummary: [
+          { label: 'Specification Standard', value: 'BDS 1313 / ASTM A615 / IS 1786' },
+          { label: 'Theoretical Basis', value: 'W = D² / 162.2 kg/m (Density 7850 kg/m³)' },
+          { label: 'Standard Length', value: '12.0 meters per bar' },
+        ],
+        secondaryValues: Object.entries(REBAR_STANDARD_DATA).map(([dia, data]) => ({
+          label: `Ø${dia} mm Rebar`,
+          value: `${data.unitWeight} kg/m`,
+          unit: `Area: ${data.area} mm²`,
+        })),
+        breakdown: Object.entries(REBAR_STANDARD_DATA).map(([dia, data]) => ({
+          step: `Ø${dia} mm Bar`,
+          expression: `12m Bar Wt = ${(data.unitWeight * 12).toFixed(2)} kg`,
+          result: `${data.unitWeight > 0 ? Math.floor(1000 / (data.unitWeight * 12)) : 0} bars/ton`,
+        })),
+        assumptions: [
+          { label: 'Steel Density', value: '7,850 kg/m³ standard structural carbon steel' },
+        ],
+        engineeringNotes: 'Unit weight based on nominal diameter. Permissible rolling margin per BDS 1313 applies.',
+        engineeringBasis: {
+          calculationBasis: 'Theoretical Cross-Sectional Area × Steel Density',
+          formulaMethod: 'W = (π × D² / 4) × 7850 kg/m³ = D² / 162.196 kg/m',
+          standardCode: 'BDS 1313:2008 / ASTM A615 / IS 1786',
+          materialAssumption: 'High yield deformed bar (Grade 400/500/550)',
+          densityConstants: '7850 kg/m³',
+        },
+      };
+
+      exportCalculationToPDF(rebarResult, {
+        fitToOnePage: true,
+        autoDownload: true,
+      });
+      toast.success('Rebar Weight Schedule exported as 1-Page A4 PDF');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to export PDF.');
+    }
+  };
+
+  const handleExportDensityPDF = () => {
+    try {
+      const densityResult: CalculationResult = {
+        title: 'Civil Engineering Material Bulk & Compacted Densities Reference',
+        primaryValue: `${Object.keys(DENSITIES).length}`,
+        primaryUnit: 'Standard Materials',
+        primaryCategory: 'Material Science Reference',
+        formula: 'Bulk Mass Density ρ = Mass / Volume (kg/m³)',
+        substitutedFormula: 'BNBC 2020 Part 6 / IS 875 Part 1 / Eurocode 1 Standard Densities',
+        inputsSummary: [
+          { label: 'Building Code Standard', value: 'BNBC 2020 / IS 875 Part 1' },
+          { label: 'Unit System', value: 'kg/m³ (SI Metric)' },
+          { label: 'Application', value: 'Dead Load Estimation & Material Quantification' },
+        ],
+        secondaryValues: Object.entries(DENSITIES).slice(0, 10).map(([mat, dens]) => ({
+          label: mat.charAt(0).toUpperCase() + mat.slice(1).replace(/_/g, ' '),
+          value: `${dens} kg/m³`,
+          unit: `${(dens / 1000).toFixed(2)} t/m³`,
+        })),
+        breakdown: Object.entries(DENSITIES).slice(0, 8).map(([mat, dens]) => ({
+          step: mat.charAt(0).toUpperCase() + mat.slice(1).replace(/_/g, ' '),
+          expression: `Bulk Density = ${dens} kg/m³`,
+          result: `${(dens * 0.062428).toFixed(1)} lb/ft³`,
+        })),
+        assumptions: [
+          { label: 'Moisture Condition', value: 'Normal air-dry / compacted field conditions' },
+        ],
+        engineeringNotes: 'Densities are typical average values for dead load computations. Verify actual quarry and batch weights.',
+        engineeringBasis: {
+          calculationBasis: 'Standard Engineering Material Unit Mass',
+          formulaMethod: 'Standard Civil Engineering Tables',
+          standardCode: 'BNBC 2020 / IS 875 Part 1',
+          materialAssumption: 'Standard construction grade materials',
+          densityConstants: 'Empirical standard material mass',
+        },
+      };
+
+      exportCalculationToPDF(densityResult, {
+        fitToOnePage: true,
+        autoDownload: true,
+      });
+      toast.success('Material Densities Schedule exported as 1-Page A4 PDF');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to export PDF.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Table 1: Rebar Properties */}
       <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111827] p-6 shadow-sm dark:shadow-xl">
-        <h3 className="text-lg font-wood font-normal text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-1 tracking-wide">
-          <Grid className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-          Standard Steel Rebar Mechanical & Weight Table
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Nominal rebar sizes based on BDS 1313 / ASTM A615 / IS 1786. Unit weight theoretical: W = D² / 162.2 kg/m.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-lg font-wood font-normal text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-1 tracking-wide">
+              <Grid className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+              Standard Steel Rebar Mechanical & Weight Table
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Nominal rebar sizes based on BDS 1313 / ASTM A615 / IS 1786. Unit weight theoretical: W = D² / 162.2 kg/m.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportRebarPDF}
+            title="Export Rebar Weight Table to printable 1-page A4 PDF"
+            className="px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shrink-0 self-start sm:self-auto"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export PDF</span>
+          </button>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left calculation-table">
@@ -49,13 +163,26 @@ export const ReferenceTablesView: React.FC = () => {
 
       {/* Table 2: Material Densities */}
       <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111827] p-6 shadow-sm dark:shadow-xl">
-        <h3 className="text-lg font-wood font-normal text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-1 tracking-wide">
-          <Layers className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
-          Civil Engineering Material Bulk & Compacted Densities
-        </h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-          Typical engineering design unit masses (BNBC / IS 875 Part 1 / Eurocode 1).
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-lg font-wood font-normal text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-1 tracking-wide">
+              <Layers className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+              Civil Engineering Material Bulk & Compacted Densities
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Typical engineering design unit masses (BNBC / IS 875 Part 1 / Eurocode 1).
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportDensityPDF}
+            title="Export Material Densities Table to printable 1-page A4 PDF"
+            className="px-3 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shrink-0 self-start sm:self-auto"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export PDF</span>
+          </button>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left calculation-table">

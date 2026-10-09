@@ -10,6 +10,8 @@ import {
   Plus,
   Layers,
   Sparkles,
+  Download,
+  Printer,
 } from 'lucide-react';
 import {
   BUILTIN_UNIT_CATEGORIES,
@@ -21,8 +23,11 @@ import {
   parseFeetInches,
   UnitDefinition,
 } from '../utils/units';
-import { AppSettings } from '../types';
+import { AppSettings, CalculationResult } from '../types';
 import { CustomUnitModal } from './Common/CustomUnitModal';
+import { PrintPreviewModal } from './Common/PrintPreviewModal';
+import { exportCalculationToPDF } from '../utils/pdfExport';
+import { useToast } from './Common/Toast';
 
 interface UnitConverterModuleProps {
   settings: AppSettings;
@@ -138,6 +143,68 @@ export const UnitConverterModule: React.FC<UnitConverterModuleProps> = ({ settin
     });
   }, [numericInput, fromUnit, selectedCategory, unitsList, precision, settings, toUnit, inputValue]);
 
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const toast = useToast();
+
+  const conversionReportResult: CalculationResult = useMemo(() => {
+    return {
+      title: `${categoryData.name} Conversion: ${fromDef?.name || fromUnit} to ${toDef?.name || toUnit}`,
+      primaryValue: formatNumber(result, precision),
+      primaryUnit: toDef?.symbol || toUnit,
+      primaryCategory: categoryData.name,
+      formula: formula,
+      substitutedFormula: `${inputValue} ${fromDef?.symbol || ''} = ${formatNumber(result, precision)} ${toDef?.symbol || ''}`,
+      inputsSummary: [
+        { label: 'Category', value: categoryData.name },
+        { label: 'Source Quantity', value: `${inputValue} ${fromDef?.symbol || ''}` },
+        { label: 'Source Unit', value: `${fromDef?.name || ''} (${fromDef?.symbol || ''})` },
+        { label: 'Target Unit', value: `${toDef?.name || ''} (${toDef?.symbol || ''})` },
+        { label: 'Precision', value: `${precision} decimal places` },
+      ],
+      secondaryValues: allEquivalents.map(eq => ({
+        label: `${eq.unit.name} (${eq.unit.symbol})`,
+        value: eq.converted,
+        unit: eq.unit.symbol,
+      })),
+      breakdown: [
+        { step: 'Conversion Derivation', expression: formula, result: `${formatNumber(result, precision)} ${toDef?.symbol || ''}` },
+      ],
+      assumptions: [
+        { label: 'Base Unit Standard', value: `Physical Base: ${categoryData.baseUnit}` },
+      ],
+      engineeringNotes:
+        toDef?.civilNote ||
+        fromDef?.civilNote ||
+        'Standard civil engineering dimensional equivalence evaluated in accordance with ISO 80000-1 / ASTM E380 / BDS standards.',
+      engineeringBasis: {
+        calculationBasis: 'Standard Engineering Unit Equivalence',
+        formulaMethod: 'Multiplicative Ratio to Base Dimension',
+        standardCode: 'ISO 80000-1 / ASTM E380',
+        materialAssumption: 'Pure physical dimensional equivalence',
+        densityConstants: 'Physical unit ratio constants',
+      },
+    };
+  }, [categoryData, fromDef, toDef, fromUnit, toUnit, inputValue, result, precision, formula, allEquivalents]);
+
+  const handleExportPDF = () => {
+    try {
+      setIsExportingPDF(true);
+      exportCalculationToPDF(conversionReportResult, {
+        settings,
+        fitToOnePage: true,
+        autoDownload: true,
+      });
+      toast.success('Official A4 1-Page Unit Conversion PDF exported');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      toast.error('Failed to generate PDF. Opening print preview instead.');
+      setIsPrintPreviewOpen(true);
+    } finally {
+      setTimeout(() => setIsExportingPDF(false), 1200);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -157,7 +224,30 @@ export const UnitConverterModule: React.FC<UnitConverterModuleProps> = ({ settin
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Export PDF Button */}
+          <button
+            type="button"
+            onClick={handleExportPDF}
+            disabled={isExportingPDF}
+            title="Export official 1-page A4 Unit Conversion PDF directly with PB CivilLab branding"
+            className="px-3 py-2 rounded-xl border border-cyan-500/40 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Export PDF</span>
+          </button>
+
+          {/* Print / Preview Button */}
+          <button
+            type="button"
+            onClick={() => setIsPrintPreviewOpen(true)}
+            title="Open printable preview and customizable report options"
+            className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+          >
+            <Printer className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Print / Preview</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsCustomModalOpen(true)}
@@ -342,6 +432,13 @@ export const UnitConverterModule: React.FC<UnitConverterModuleProps> = ({ settin
       <CustomUnitModal
         isOpen={isCustomModalOpen}
         onClose={() => setIsCustomModalOpen(false)}
+      />
+
+      <PrintPreviewModal
+        isOpen={isPrintPreviewOpen}
+        onClose={() => setIsPrintPreviewOpen(false)}
+        result={conversionReportResult}
+        settings={settings}
       />
     </div>
   );

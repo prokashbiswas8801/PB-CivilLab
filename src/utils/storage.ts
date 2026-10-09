@@ -10,7 +10,7 @@
  * 5. Safe Malformed JSON Handling: Never crashes the application on corrupted local state.
  */
 
-import { AppSettings, ProjectWorkspace, ReportProjectMeta, HistoryItem } from '../types';
+import { AppSettings, ProjectWorkspace, ReportProjectMeta, HistoryItem, UserProfile } from '../types';
 import { APP_VERSION } from '../constants/version';
 import { REGIONAL_PROFILES } from '../constants/engineering';
 
@@ -66,6 +66,17 @@ export function createBlankProject(name: string = 'Default Engineering Workspace
   };
 }
 
+export const DEFAULT_USER_PROFILE: UserProfile = {
+  engineerName: 'Prokash Biswas',
+  designation: 'Civil & Structural Engineer',
+  licenseNumber: 'PE-48291',
+  companyName: 'PB CivilLab Infrastructure Consult',
+  email: 'prokashbiswas8801@gmail.com',
+  phone: '+880 1700-000000',
+  companyAddress: 'Dhaka, Bangladesh',
+  notes: 'Certified Civil Engineering Calculation Engine',
+};
+
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   currency: 'BDT',
   currencySymbol: '৳',
@@ -76,6 +87,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   defaultDryFactorPlaster: 1.33,
   defaultConcreteWastage: 3,
   regionalProfile: REGIONAL_PROFILES.bd_standard,
+  userProfile: DEFAULT_USER_PROFILE,
 };
 
 export interface PersistedAppStateV2 {

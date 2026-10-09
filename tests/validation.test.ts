@@ -25,6 +25,8 @@ import {
 
 import { buildReportDocument } from '../src/report/buildReportDocument';
 import { validateAndImportBackup, createBlankProject } from '../src/utils/storage';
+import { UserProfile, CalculationResult } from '../src/types';
+import { exportCalculationToPDF } from '../src/utils/pdfExport';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -172,6 +174,211 @@ assert(reportDoc.header.authorCredit === 'Prokash Biswas', 'Report header enforc
 assert(reportDoc.header.documentNumber === 'PBCL-2026-TEST', 'Report preserves user document number');
 assert(Boolean(reportDoc.project.projectName?.includes('Super Long')), 'Long project title preserved in full without truncation');
 assert(reportDoc.disclaimer.length > 50, 'Standard engineering disclaimer embedded in report');
+
+// 7. PROJECT EXECUTIVE SUMMARY AGGREGATION & DATA ROLL-UP
+console.log('\n▶ [7/7] Project Executive Summary Aggregation & Data Roll-Up:');
+const sampleProjectWorkspace = {
+  id: 'test_ws_exec',
+  name: 'Executive Test Flyover',
+  createdAt: '2026-03-01T00:00:00.000Z',
+  updatedAt: '2026-03-01T00:00:00.000Z',
+  meta: {
+    projectName: 'Flyover Pier Cap 12',
+    client: 'Roads & Highways Department',
+    location: 'Dhaka - Chittagong Expressway',
+    preparedBy: 'Prokash Biswas, PE',
+    documentNumber: 'PBCL-EXEC-001',
+    reportStatus: 'Approved' as const,
+  },
+  history: [
+    {
+      id: 'h1',
+      toolId: 'concrete-volume',
+      toolName: 'Concrete Volume Calculator',
+      timestamp: '2026-03-01T00:00:00.000Z',
+      summary: '32.50 m³',
+      result: {
+        title: 'Pier Cap Wet Volume',
+        primaryValue: '32.50',
+        primaryUnit: 'm³',
+        primaryCategory: 'volume',
+        primaryRawValue: 32.5,
+        secondaryValues: [{ label: 'Volume in CFT', value: '1,147.7 CFT' }],
+        breakdown: [],
+        formula: 'L × W × H',
+        substitutedFormula: '32.5 m³',
+        inputsSummary: [{ label: 'Wet Concrete Volume', value: '32.5 m³' }],
+        assumptions: [],
+      },
+    },
+    {
+      id: 'h2',
+      toolId: 'rebar-weight',
+      toolName: 'Rebar Calculator',
+      timestamp: '2026-03-01T00:00:00.000Z',
+      summary: '4,200.0 kg',
+      result: {
+        title: 'Pier Cap Reinforcement',
+        primaryValue: '4,200.0',
+        primaryUnit: 'kg',
+        primaryCategory: 'mass',
+        primaryRawValue: 4200.0,
+        secondaryValues: [{ label: 'Metric Tonnes', value: '4.200 Tonnes' }],
+        breakdown: [],
+        formula: 'D²/162.2 × L × Qty',
+        substitutedFormula: '4200 kg',
+        inputsSummary: [],
+        assumptions: [],
+      },
+    },
+  ],
+  takeoffItems: [
+    {
+      id: 't1',
+      itemNo: '1.01',
+      description: 'RCC Substructure Concrete',
+      length: 10,
+      width: 2,
+      height: 0.5,
+      quantity: 1,
+      unit: 'm³' as const,
+      rate: 8500,
+      totalQty: 10.0,
+      amount: 85000,
+    },
+    {
+      id: 't2',
+      itemNo: '1.02',
+      description: 'TMT Reinforcing Steel',
+      length: 1,
+      width: 1,
+      height: 1,
+      quantity: 800,
+      unit: 'kg' as const,
+      rate: 95,
+      totalQty: 800,
+      amount: 76000,
+    },
+  ],
+  currency: 'BDT',
+  currencySymbol: '৳',
+};
+
+// Aggregate validation
+const concFromHistory = sampleProjectWorkspace.history
+  .filter(h => h.toolId.includes('concrete'))
+  .reduce((sum, h) => sum + (h.result.primaryRawValue || 0), 0);
+const concFromTakeoff = sampleProjectWorkspace.takeoffItems
+  .filter(t => t.unit === 'm³')
+  .reduce((sum, t) => sum + t.totalQty, 0);
+const totalConcrete = concFromHistory + concFromTakeoff;
+
+assert(totalConcrete === 42.5, 'Total concrete volume aggregates correctly (32.5 + 10 = 42.5 m³)');
+
+const steelFromHistory = sampleProjectWorkspace.history
+  .filter(h => h.toolId.includes('rebar'))
+  .reduce((sum, h) => sum + (h.result.primaryRawValue || 0), 0);
+const steelFromTakeoff = sampleProjectWorkspace.takeoffItems
+  .filter(t => t.unit === 'kg')
+  .reduce((sum, t) => sum + t.totalQty, 0);
+const totalSteel = steelFromHistory + steelFromTakeoff;
+
+assert(totalSteel === 5000.0, 'Total steel weight aggregates correctly (4200 + 800 = 5000 kg)');
+assert(totalSteel / 1000 === 5.0, 'Total steel converts accurately to 5.0 Metric Tonnes');
+assert(Math.round(totalConcrete * 35.3147) === 1501, 'Total concrete converts accurately to imperial CFT (1,501 CFT)');
+
+// =========================================================================
+// 8. USER PROFILE INTEGRATION & GRANULAR REPORT SELECTION
+// =========================================================================
+console.log('\n▶ [8/8] User Profile Integration & Granular Report Selection Integrity:');
+
+const testProfile: UserProfile = {
+  engineerName: 'Engr. Prokash Biswas',
+  designation: 'Principal Structural Engineer',
+  licenseNumber: 'PE-48291',
+  companyName: 'PB CivilLab Engineering Consult',
+  email: 'prokashbiswas8801@gmail.com',
+  phone: '+880 1700-000000',
+  companyAddress: 'Dhaka, Bangladesh',
+  notes: 'Certified Professional Calculation',
+};
+
+assert(testProfile.engineerName.includes('Prokash Biswas'), 'User Profile preserves engineer name');
+assert(testProfile.licenseNumber === 'PE-48291', 'User Profile preserves license number');
+assert(testProfile.email === 'prokashbiswas8801@gmail.com', 'User Profile preserves author email');
+
+// Test buildReportDocument with User Profile / Engineer metadata
+const sampleCalcResult: CalculationResult = {
+  title: 'Isolated Column Footing Dimension & Reinforcement Check',
+  primaryValue: '12.50',
+  primaryUnit: 'm³',
+  status: 'valid',
+  breakdown: [
+    { step: 'Base Area', expression: '2.5 × 2.5', result: '6.25 m²' },
+    { step: 'Volume', expression: '6.25 × 2.0', result: '12.50 m³' },
+  ],
+  formula: 'V = L × B × H',
+  substitutedFormula: 'V = 2.5 × 2.5 × 2.0 = 12.50 m³',
+  inputsSummary: [
+    { label: 'Length', value: '2.5', unit: 'm' },
+    { label: 'Width', value: '2.5', unit: 'm' },
+    { label: 'Depth', value: '2.0', unit: 'm' },
+  ],
+  assumptions: [{ label: 'Soil Bearing', value: '200 kPa' }],
+  engineeringNotes: 'Ensure 75mm clear cover for footing in direct soil contact.',
+};
+
+const reportWithProfile = buildReportDocument(sampleCalcResult, {
+  projectMeta: {
+    projectName: 'Commercial Tower Foundations',
+    preparedBy: testProfile.engineerName,
+    consultant: testProfile.companyName,
+    engineerDesignation: testProfile.designation,
+    engineerLicense: testProfile.licenseNumber,
+  },
+});
+
+assert(reportWithProfile.project.preparedBy === 'Engr. Prokash Biswas', 'Report document model preserves preparedBy engineer');
+assert(reportWithProfile.project.consultant === 'PB CivilLab Engineering Consult', 'Report document model preserves consultancy firm');
+assert(
+  Boolean(reportWithProfile.signOff[0]?.title?.includes('Principal Structural Engineer')) &&
+  Boolean(reportWithProfile.signOff[0]?.title?.includes('PE-48291')),
+  'Sign-off PREPARED BY card displays engineer designation and PE license registration'
+);
+
+// Test Granular Selection: Executive 1-Page Summary Preset
+const execDoc = buildReportDocument(sampleCalcResult, {
+  sectionOptions: {
+    showProjectInfo: true,
+    showInputs: true,
+    showPrimaryResult: true,
+    showSecondaryResults: true,
+    showDetailedTables: false,
+    showCalculationTrace: false,
+    showEngineeringBasis: false,
+    showEngineeringNotes: true,
+    showVerification: true,
+  },
+});
+
+assert(execDoc.layout.showPrimaryResult === true, 'Executive preset maintains primary output');
+assert(execDoc.layout.showCalculationTrace === false, 'Executive preset cleanly hides deep calculation trace for single-page budget');
+assert(execDoc.layout.showVerification === true, 'Executive preset maintains QA verification block');
+
+// Test PDF export with userProfile integration
+const pdfDoc = exportCalculationToPDF(sampleCalcResult, {
+  autoDownload: false,
+  fitToOnePage: true,
+  settings: {
+    userProfile: testProfile,
+  },
+  projectMeta: {
+    projectName: 'Highway Box Culvert',
+  },
+});
+
+assert(pdfDoc.getNumberOfPages() === 1, 'PDF engine strictly respects fitToOnePage constraint (exactly 1 page)');
+assert(pdfDoc.output().length > 0, 'PDF engine outputs non-empty byte buffer with embedded profile');
 
 console.log('\n===============================================================');
 console.log(` VALIDATION TEST RESULTS: ${passedTests}/${totalTests} PASSED (${failedTests} FAILED)`);

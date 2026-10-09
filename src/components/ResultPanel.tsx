@@ -293,9 +293,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       exportCalculationToPDF(result, {
         settings,
         projectMeta: result.projectMeta,
+        fitToOnePage: true,
         autoDownload: true,
       });
-      toast.success('Official A4 Engineering PDF exported with PB CivilLab branding');
+      toast.success('Official A4 1-Page Engineering PDF exported with PB CivilLab branding');
     } catch (err) {
       console.error('PDF export error:', err);
       toast.error('Failed to generate PDF. Opening print preview instead.');

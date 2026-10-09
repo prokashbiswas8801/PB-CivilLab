@@ -38,6 +38,9 @@ import {
   CheckSquare,
   Square,
   FileJson,
+  User,
+  UserCheck,
+  Award,
 } from 'lucide-react';
 import {
   CalculationResult,
@@ -98,18 +101,20 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
     projectId: initialProjectMeta?.projectId || '',
     client: initialProjectMeta?.client || '',
     contractor: initialProjectMeta?.contractor || '',
-    consultant: initialProjectMeta?.consultant || '',
+    consultant: initialProjectMeta?.consultant || settings?.userProfile?.companyName || '',
     location: initialProjectMeta?.location || '',
     drawingNumber: initialProjectMeta?.drawingNumber || '',
     drawingRevision: initialProjectMeta?.drawingRevision || '',
     documentNumber: initialProjectMeta?.documentNumber || defaultDocNo,
     calculationReference: initialProjectMeta?.calculationReference || '',
-    preparedBy: initialProjectMeta?.preparedBy || '',
+    preparedBy: initialProjectMeta?.preparedBy || settings?.userProfile?.engineerName || '',
     checkedBy: initialProjectMeta?.checkedBy || '',
     approvedBy: initialProjectMeta?.approvedBy || '',
     reportStatus: initialProjectMeta?.reportStatus || 'Draft',
     date: initialProjectMeta?.date || currentDate,
     showEmptyFields: initialProjectMeta?.showEmptyFields || false,
+    engineerDesignation: initialProjectMeta?.engineerDesignation || settings?.userProfile?.designation || '',
+    engineerLicense: initialProjectMeta?.engineerLicense || settings?.userProfile?.licenseNumber || '',
   }));
 
   // Layout & Formatting State
@@ -194,6 +199,85 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
     try {
       localStorage.setItem(STORAGE_KEY_SECTIONS, JSON.stringify(allOn));
     } catch {}
+  };
+
+  const handleApplyPreset = (preset: 'executive' | 'full' | 'field' | 'audit') => {
+    let presetSections: ReportSectionOptions;
+    if (preset === 'executive') {
+      presetSections = {
+        showProjectInfo: true,
+        showInputs: true,
+        showPrimaryResult: true,
+        showSecondaryResults: true,
+        showDetailedTables: false,
+        showCalculationTrace: false,
+        showEngineeringBasis: false,
+        showEngineeringNotes: true,
+        showVerification: true,
+      };
+      setPageFormatMode('one-page');
+    } else if (preset === 'field') {
+      presetSections = {
+        showProjectInfo: true,
+        showInputs: true,
+        showPrimaryResult: true,
+        showSecondaryResults: true,
+        showDetailedTables: true,
+        showCalculationTrace: false,
+        showEngineeringBasis: false,
+        showEngineeringNotes: true,
+        showVerification: true,
+      };
+    } else if (preset === 'audit') {
+      presetSections = {
+        showProjectInfo: true,
+        showInputs: true,
+        showPrimaryResult: true,
+        showSecondaryResults: true,
+        showDetailedTables: true,
+        showCalculationTrace: true,
+        showEngineeringBasis: true,
+        showEngineeringNotes: true,
+        showVerification: true,
+      };
+    } else {
+      // 'full'
+      presetSections = {
+        showProjectInfo: true,
+        showInputs: true,
+        showPrimaryResult: true,
+        showSecondaryResults: true,
+        showDetailedTables: true,
+        showCalculationTrace: true,
+        showEngineeringBasis: true,
+        showEngineeringNotes: true,
+        showVerification: true,
+      };
+      setPageFormatMode('multi-page');
+    }
+
+    setSections(presetSections);
+    try {
+      localStorage.setItem(STORAGE_KEY_SECTIONS, JSON.stringify(presetSections));
+    } catch {}
+  };
+
+  const handleSyncFromProfile = () => {
+    const p = settings?.userProfile;
+    if (!p) {
+      setExportNotice('No Engineer Profile configured in Settings yet.');
+      setTimeout(() => setExportNotice(null), 3000);
+      return;
+    }
+    setProjectMeta(prev => ({
+      ...prev,
+      preparedBy: p.engineerName || prev.preparedBy,
+      consultant: p.companyName || prev.consultant,
+      engineerDesignation: p.designation || prev.engineerDesignation,
+      engineerLicense: p.licenseNumber || prev.engineerLicense,
+    }));
+    setExportNotice(`Applied profile of ${p.engineerName} to report.`);
+    setTimeout(() => setExportNotice(null), 3000);
   };
 
   const handleResetSectionDefaults = () => {
@@ -570,6 +654,46 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 </div>
               </div>
 
+              {/* Granular Report Presets */}
+              <div className="grid grid-cols-2 gap-1.5 pb-2 border-b border-slate-200 dark:border-white/5">
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('executive')}
+                  className="px-2.5 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-bold text-[10px] text-left transition-all active:scale-95 flex items-center justify-between"
+                  title="Enable Project, Primary, Inputs, Outputs & Sign-off (1-page fit)"
+                >
+                  <span>1-Page Executive</span>
+                  <span className="text-[9px] font-mono opacity-70">A4 Single</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('full')}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 font-semibold text-[10px] text-left transition-all active:scale-95 flex items-center justify-between"
+                  title="Enable all 9 sections with full breakdown and equations"
+                >
+                  <span>Full Technical</span>
+                  <span className="text-[9px] font-mono opacity-70">9/9 Sec</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('field')}
+                  className="px-2.5 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold text-[10px] text-left transition-all active:scale-95 flex items-center justify-between"
+                  title="Field sheet for site contractors with measurements & notes"
+                >
+                  <span>Site Contractor</span>
+                  <span className="text-[9px] font-mono opacity-70">Field</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('audit')}
+                  className="px-2.5 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-semibold text-[10px] text-left transition-all active:scale-95 flex items-center justify-between"
+                  title="Audit report with full formula trace, codes, and sign-offs"
+                >
+                  <span>QA & Audit</span>
+                  <span className="text-[9px] font-mono opacity-70">Verified</span>
+                </button>
+              </div>
+
               <div className="space-y-1 text-xs">
                 {/* 1. Project Information */}
                 <label className="flex items-center justify-between p-1.5 rounded hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer">
@@ -825,11 +949,23 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
             {/* Quality Sign-Off Block Inputs */}
             <div className="space-y-2 pt-3 border-t border-slate-200 dark:border-white/10">
-              <span className="text-[11px] font-mono uppercase font-bold text-cyan-700 dark:text-cyan-400 block tracking-wider">
-                Sign-Off / Verification
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase font-bold text-cyan-700 dark:text-cyan-400 block tracking-wider">
+                  Sign-Off / Verification
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSyncFromProfile}
+                  className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
+                  title="Auto-fill Prepared By and Consultant from Engineer Profile"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Sync Profile</span>
+                </button>
+              </div>
+
               <div>
-                <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">Prepared By</label>
+                <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">Prepared By (Engineer)</label>
                 <input
                   type="text"
                   value={projectMeta.preparedBy}
@@ -838,6 +974,30 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-[#151C2B] p-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">Designation</label>
+                  <input
+                    type="text"
+                    value={projectMeta.engineerDesignation || ''}
+                    onChange={e => setProjectMeta({ ...projectMeta, engineerDesignation: e.target.value })}
+                    placeholder="e.g. Civil & Structural Engr"
+                    className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-[#151C2B] p-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">License / PE Reg</label>
+                  <input
+                    type="text"
+                    value={projectMeta.engineerLicense || ''}
+                    onChange={e => setProjectMeta({ ...projectMeta, engineerLicense: e.target.value })}
+                    placeholder="e.g. PE-48291"
+                    className="w-full rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-[#151C2B] p-1.5 text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[10px] text-slate-500 dark:text-slate-400 block mb-0.5">Checked By</label>
@@ -1168,6 +1328,11 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                       <span className="block font-bold text-slate-900 break-words">
                         {projectMeta.preparedBy || 'Prepared By'}
                       </span>
+                      {(projectMeta.engineerDesignation || projectMeta.engineerLicense) && (
+                        <span className="block text-[9px] text-slate-500 font-sans mt-0.5">
+                          {[projectMeta.engineerDesignation, projectMeta.engineerLicense ? `Reg: ${projectMeta.engineerLicense}` : ''].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                       <span className="block text-[10px] text-slate-500 mt-1 border-t border-slate-800 pt-1">
                         Signature & Date
                       </span>

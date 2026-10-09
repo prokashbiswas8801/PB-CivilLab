@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { FORMULA_LIBRARY } from '../constants/engineering';
-import { Search, BookOpen, Calculator, Copy, Check } from 'lucide-react';
+import { Search, BookOpen, Calculator, Copy, Check, Download } from 'lucide-react';
+import { CalculationResult } from '../types';
+import { exportCalculationToPDF } from '../utils/pdfExport';
+import { useToast } from './Common/Toast';
 
 export const FormulaLibraryView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const toast = useToast();
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -31,6 +35,54 @@ export const FormulaLibraryView: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleExportPDF = () => {
+    try {
+      const formulaResult: CalculationResult = {
+        title: `Engineering Formula Reference Sheet (${selectedCategory})`,
+        primaryValue: `${filteredFormulas.length}`,
+        primaryUnit: 'Standard Equations',
+        primaryCategory: 'Civil Formula Reference',
+        formula: 'Standard Civil & Structural Mechanics Formulations',
+        substitutedFormula: 'BNBC 2020 / ACI 318 / BDS 1313 / IS 456 Specification Compliant',
+        inputsSummary: [
+          { label: 'Category Filter', value: selectedCategory },
+          { label: 'Search Query', value: searchQuery || 'None (All in category)' },
+          { label: 'Formulas Included', value: `${filteredFormulas.length} formulas` },
+        ],
+        secondaryValues: filteredFormulas.slice(0, 10).map(f => ({
+          label: f.name,
+          value: f.formula,
+          unit: f.category,
+        })),
+        breakdown: filteredFormulas.slice(0, 8).map(f => ({
+          step: f.name,
+          expression: f.formula,
+          result: f.notes,
+        })),
+        assumptions: [
+          { label: 'Source Codes', value: 'ACI 318-19, BNBC 2020, BDS 1313, IS 456' },
+        ],
+        engineeringNotes: 'Authoritative engineering formula reference compiled for jobsite and design office auditing.',
+        engineeringBasis: {
+          calculationBasis: 'Standard Engineering Mechanics & Building Codes',
+          formulaMethod: 'Governing Structural & Material Equations',
+          standardCode: 'BNBC 2020 / ACI 318-19 / IS 456',
+          materialAssumption: 'Standard Civil Engineering Practice',
+          densityConstants: 'Theoretical & empirical constants',
+        },
+      };
+
+      exportCalculationToPDF(formulaResult, {
+        fitToOnePage: true,
+        autoDownload: true,
+      });
+      toast.success('Formula Reference Sheet exported as 1-Page A4 PDF');
+    } catch (err) {
+      console.error('Failed to export formula PDF:', err);
+      toast.error('Failed to generate PDF.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Search */}
@@ -46,15 +98,26 @@ export const FormulaLibraryView: React.FC = () => {
             </p>
           </div>
 
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search formulas or variables..."
-              className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0B0F19] pl-9 pr-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500/50 shadow-sm"
-            />
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search formulas or variables..."
+                className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#0B0F19] pl-9 pr-3 py-2 text-xs font-mono text-slate-900 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500/50 shadow-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleExportPDF}
+              title="Export formula cheat sheet to printable 1-page A4 PDF"
+              className="px-3 py-2 rounded-lg border border-cyan-500/40 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export PDF</span>
+            </button>
           </div>
         </div>
 

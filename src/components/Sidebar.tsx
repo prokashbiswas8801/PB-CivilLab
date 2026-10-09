@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -27,10 +27,12 @@ import {
   Palette,
   Check,
   Sparkles,
+  User,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useTheme, ACCENT_THEMES, AccentColor, ThemeMode } from '../context/ThemeContext';
 import { useToast } from './Common/Toast';
+import { loadUserProfile } from '../utils/userProfile';
 
 interface SidebarProps {
   activeView: string;
@@ -41,6 +43,7 @@ interface SidebarProps {
   onOpenDisclaimer: () => void;
   onOpenHistory?: () => void;
   onOpenSettings?: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -50,9 +53,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
   onOpenDisclaimer,
+  onOpenProfile,
 }) => {
   const { theme, resolvedTheme, accent, accentConfig, setTheme, setAccent, toggleTheme } = useTheme();
   const toast = useToast();
+  const [userProfile, setUserProfile] = useState(() => loadUserProfile());
+
+  // Listen for real-time user profile updates across app
+  useEffect(() => {
+    const handleProfileUpdate = (e: any) => {
+      if (e.detail) setUserProfile(e.detail);
+      else setUserProfile(loadUserProfile());
+    };
+    window.addEventListener('pb_civillab_user_profile_updated', handleProfileUpdate);
+    return () => window.removeEventListener('pb_civillab_user_profile_updated', handleProfileUpdate);
+  }, []);
 
   // Collapsed state persisted in localStorage
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -84,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
         { id: 'favorites', name: `Favorites (${favorites.length})`, icon: Star },
+        { id: 'profile-account', name: 'Profile Account', icon: User },
       ],
     },
     {
@@ -182,6 +198,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const handleSelect = (id: string) => {
+    if (id === 'profile-account') {
+      if (onOpenProfile) onOpenProfile();
+      onCloseMobile();
+      return;
+    }
     onNavigate(id);
     onCloseMobile();
   };
@@ -254,7 +275,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Scrollable Navigation: Independent Scroll Container */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-5 overscroll-contain">
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4 overscroll-contain">
+          {/* User Profile Account Facility (Sidebar Navigation Item & Card) */}
+          {!isCollapsed ? (
+            <div className="px-1 mb-2">
+              <button
+                type="button"
+                onClick={onOpenProfile}
+                className="w-full p-2.5 rounded-xl border border-cyan-500/25 bg-gradient-to-r from-cyan-500/10 via-sky-500/5 to-transparent hover:border-cyan-400 dark:hover:border-cyan-400 text-left transition-all group flex items-center justify-between shadow-sm active:scale-95"
+                title="Manage Site Engineer & Student Identity"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition-transform">
+                    {userProfile.engineerName ? userProfile.engineerName.slice(0, 2).toUpperCase() : 'PB'}
+                  </div>
+                  <div className="truncate min-w-0">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block truncate group-hover:text-cyan-600 dark:group-hover:text-cyan-300">
+                      {userProfile.engineerName || 'Site Engineer'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate font-medium">
+                      {userProfile.designation || 'Profile Account'}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/30 shrink-0">
+                  Account
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-center mb-2">
+              <button
+                type="button"
+                onClick={onOpenProfile}
+                className="w-10 h-10 rounded-xl flex items-center justify-center border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 transition-all shadow-sm group"
+                title={`Profile Account: ${userProfile.engineerName} (${userProfile.designation || 'Site Engineer'})`}
+                aria-label="Open User Profile Account"
+              >
+                <User className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              </button>
+            </div>
+          )}
+
           {navSections.map((section, sIdx) => (
             <div key={sIdx} className="space-y-1">
               {!isCollapsed && (

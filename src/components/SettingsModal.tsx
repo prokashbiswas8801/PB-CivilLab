@@ -20,8 +20,14 @@ import {
   Calculator,
   Sparkles,
   Palette,
+  User,
+  Building,
+  Award,
+  Mail,
+  Phone,
+  Briefcase,
 } from 'lucide-react';
-import { AppSettings, RegionalProfile, UnitPreferences } from '../types';
+import { AppSettings, RegionalProfile, UnitPreferences, UserProfile } from '../types';
 import { REGIONAL_PROFILES } from '../constants/engineering';
 import { ConfirmDialog } from './Common/ConfirmDialog';
 import { useToast } from './Common/Toast';
@@ -43,7 +49,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenCustomUnitModal,
 }) => {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'appearance' | 'units' | 'calculation' | 'engineering' | 'data'>('units');
+  const [activeTab, setActiveTab] = useState<'profile' | 'units' | 'calculation' | 'engineering' | 'appearance' | 'data'>('profile');
+
+  // Engineer / User Profile
+  const [engineerName, setEngineerName] = useState(settings.userProfile?.engineerName || 'Prokash Biswas');
+  const [engineerDesignation, setEngineerDesignation] = useState(settings.userProfile?.designation || 'Civil & Structural Engineer');
+  const [engineerLicense, setEngineerLicense] = useState(settings.userProfile?.licenseNumber || 'PE-48291');
+  const [companyName, setCompanyName] = useState(settings.userProfile?.companyName || 'PB CivilLab Infrastructure Consult');
+  const [engineerEmail, setEngineerEmail] = useState(settings.userProfile?.email || 'prokashbiswas8801@gmail.com');
+  const [engineerPhone, setEngineerPhone] = useState(settings.userProfile?.phone || '');
+  const [companyAddress, setCompanyAddress] = useState(settings.userProfile?.companyAddress || '');
+  const [profileNotes, setProfileNotes] = useState(settings.userProfile?.notes || '');
 
   // Appearance
   const { theme, setTheme, accent, setAccent } = useTheme();
@@ -115,6 +131,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       structuralDim: prefStructuralDim,
     };
 
+    const userProfile: UserProfile = {
+      engineerName: engineerName.trim() || 'Prokash Biswas',
+      designation: engineerDesignation.trim(),
+      licenseNumber: engineerLicense.trim(),
+      companyName: companyName.trim(),
+      email: engineerEmail.trim(),
+      phone: engineerPhone.trim(),
+      companyAddress: companyAddress.trim(),
+      notes: profileNotes.trim(),
+    };
+
     onUpdateSettings({
       ...settings,
       currency,
@@ -127,6 +154,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       regionalProfile: updatedProfile,
       unitPreferences,
       bangladeshProfileActive: unitSystem === 'bangladesh',
+      userProfile,
     });
 
     toast.success('Preferences saved successfully.');
@@ -204,6 +232,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setPrefPressure('mpa');
     setPrefForce('kN');
     setPrefStructuralDim('mm');
+    setEngineerName('Prokash Biswas');
+    setEngineerDesignation('Civil & Structural Engineer');
+    setEngineerLicense('PE-48291');
+    setCompanyName('PB CivilLab Infrastructure Consult');
+    setEngineerEmail('prokashbiswas8801@gmail.com');
+    setEngineerPhone('+880 1700-000000');
+    setCompanyAddress('Dhaka, Bangladesh');
+    setProfileNotes('Certified Civil Engineering Calculation Engine');
     setIsResetConfirmOpen(false);
     toast.info('Preferences reset to default values.');
   };
@@ -240,6 +276,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Tab Navigation (Section 26) */}
           <div className="flex items-center border-b border-white/10 bg-[#111827] px-4 overflow-x-auto no-scrollbar text-xs">
             {[
+              { id: 'profile', label: 'Engineer Profile' },
               { id: 'units', label: 'Units Ecosystem' },
               { id: 'calculation', label: 'Calculation' },
               { id: 'engineering', label: 'Engineering Codes' },
@@ -263,6 +300,158 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* Tab Content */}
           <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+            {/* 0. Engineer / User Profile */}
+            {activeTab === 'profile' && (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-xl border border-cyan-500/20 bg-cyan-950/20 text-slate-300">
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="w-4 h-4 text-cyan-400" />
+                    <p className="text-xs text-cyan-300 font-semibold">Civil Engineer & Sign-Off Identity</p>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Set up your professional credentials. This profile automatically authenticates your calculation sheets, pre-populates the Quality Assurance (QA) verification sign-off blocks, and formats official A4 PDF exports.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Engineer Full Name</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={engineerName}
+                      onChange={e => setEngineerName(e.target.value)}
+                      placeholder="e.g. Prokash Biswas"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Professional Designation / Role</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={engineerDesignation}
+                      onChange={e => setEngineerDesignation(e.target.value)}
+                      placeholder="e.g. Civil & Structural Engineer"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-400" />
+                      <span>PE / License / Registration No.</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={engineerLicense}
+                      onChange={e => setEngineerLicense(e.target.value)}
+                      placeholder="e.g. PE-48291 or IEB M-38291"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Consultancy / Firm / Agency</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      placeholder="e.g. PB CivilLab Infrastructure Consult"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Official Email</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={engineerEmail}
+                      onChange={e => setEngineerEmail(e.target.value)}
+                      placeholder="e.g. prokashbiswas8801@gmail.com"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Contact Phone / Site Radio</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={engineerPhone}
+                      onChange={e => setEngineerPhone(e.target.value)}
+                      placeholder="e.g. +880 1700-000000"
+                      className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Office / Jobsite Location</label>
+                  <input
+                    type="text"
+                    value={companyAddress}
+                    onChange={e => setCompanyAddress(e.target.value)}
+                    placeholder="e.g. Dhaka, Bangladesh"
+                    className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Engineering Verification Notes / Motto</label>
+                  <input
+                    type="text"
+                    value={profileNotes}
+                    onChange={e => setProfileNotes(e.target.value)}
+                    placeholder="e.g. Certified Civil Engineering Calculation Engine"
+                    className="w-full rounded-xl border border-white/10 bg-[#151C2B] p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                  />
+                </div>
+
+                {/* Live Stamp Card Preview */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-mono uppercase text-slate-400 block mb-2 font-bold tracking-wider">
+                    Sign-Off Stamp Preview (As Rendered in PDF & Print Sheets)
+                  </span>
+                  <div className="p-4 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-[#111827] to-[#151C2B] shadow-inner flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                          PREPARED BY
+                        </span>
+                        <span className="text-xs font-bold text-slate-100">{engineerName || 'Prokash Biswas'}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        {engineerDesignation || 'Civil & Structural Engineer'}
+                        {engineerLicense ? ` · Reg: ${engineerLicense}` : ''}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        {companyName || 'PB CivilLab Infrastructure Consult'}
+                        {companyAddress ? ` · ${companyAddress}` : ''}
+                      </p>
+                    </div>
+
+                    <div className="w-36 h-12 rounded-lg border border-dashed border-cyan-500/40 bg-white/5 flex flex-col items-center justify-center text-center p-1 shrink-0">
+                      <span className="text-[9px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Signature & Seal</span>
+                      <span className="text-[8px] text-slate-400 font-mono">Ready for PDF Stamp</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* 1. Units Ecosystem */}
             {activeTab === 'units' && (
               <div className="space-y-4">

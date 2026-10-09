@@ -82,11 +82,18 @@ export function buildReportDocument(
     });
 
   // 1. Sign-off members (Strictly un-fabricated: if empty, show dash or role)
+  const preparedSub = [
+    projectMeta?.engineerDesignation,
+    projectMeta?.engineerLicense ? `Reg: ${projectMeta.engineerLicense}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   const signOff: ReportSignOffMember[] = [
     {
       role: 'PREPARED BY',
       name: projectMeta?.preparedBy?.trim() || '—',
-      title: projectMeta?.preparedBy ? 'Design / Site Engineer' : 'Signature & Date',
+      title: preparedSub || (projectMeta?.preparedBy ? 'Design / Site Engineer' : 'Signature & Date'),
       date: projectMeta?.preparedBy ? dateStr : undefined,
     },
     {

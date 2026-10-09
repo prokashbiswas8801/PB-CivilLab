@@ -25,12 +25,14 @@ import { DisclaimerModal } from './components/DisclaimerModal';
 import { SearchModal } from './components/SearchModal';
 import { ProjectWorkspaceModal } from './components/Common/ProjectWorkspaceModal';
 import { RateLibraryModal } from './components/Common/RateLibraryModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { ToastProvider } from './components/Common/Toast';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { ThemeProvider } from './context/ThemeContext';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { AppSettings, CalculationResult, HistoryItem, ProjectWorkspace } from './types';
 import { REGIONAL_PROFILES, TOOLS_CATALOG } from './constants/engineering';
+import { DEFAULT_USER_PROFILE } from './utils/storage';
 import { ChevronRight } from 'lucide-react';
 import { Logo } from './components/Logo';
 
@@ -62,6 +64,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultDryFactorPlaster: 1.33,
   defaultConcreteWastage: 3,
   regionalProfile: REGIONAL_PROFILES.bd_standard,
+  userProfile: DEFAULT_USER_PROFILE,
 };
 
 export default function App() {
@@ -76,6 +79,7 @@ export default function App() {
   const [isSidebarMobile, setIsSidebarMobile] = useState(false);
   const [isProjectWorkspaceOpen, setIsProjectWorkspaceOpen] = useState(false);
   const [isRateLibraryOpen, setIsRateLibraryOpen] = useState(false);
+  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
 
   // Settings State with LocalStorage
   const [settings, setSettings] = useState<AppSettings>(() => {
@@ -294,6 +298,148 @@ export default function App() {
     setHistory([]);
   };
 
+  const handleAddSampleCalculations = () => {
+    const sampleItems: HistoryItem[] = [
+      {
+        id: `sample_${Date.now()}_1`,
+        toolId: 'concrete-volume',
+        toolName: 'Concrete Volume Calculator',
+        timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+        summary: '24.50 m³',
+        result: {
+          title: 'RCC Slab & Beam Concrete Volume',
+          primaryValue: '24.50',
+          primaryUnit: 'm³',
+          primaryCategory: 'volume',
+          primaryRawValue: 24.5,
+          secondaryValues: [
+            { label: 'Volume in CFT', value: '865.2 CFT' },
+            { label: 'Total Members', value: '2 Slabs, 4 Beams' },
+            { label: 'Estimated Concrete Mass', value: '58,800 kg' },
+            { label: 'Estimated Cost', value: `${settings.currencySymbol} 185,000` },
+          ],
+          breakdown: [
+            { step: '1. Slab Panel 1 (10m × 7m × 0.15m)', expression: '10 × 7 × 0.15', result: '10.50 m³' },
+            { step: '2. Slab Panel 2 (12m × 6m × 0.15m)', expression: '12 × 6 × 0.15', result: '10.80 m³' },
+            { step: '3. Connecting Beams', expression: '4 × (6m × 0.25m × 0.53m)', result: '3.20 m³' },
+          ],
+          formula: 'V = Length × Width × Thickness',
+          substitutedFormula: 'V = 10.50 + 10.80 + 3.20 = 24.50 m³',
+          inputsSummary: [
+            { label: 'Structural Grade', value: 'M25 (1:1:2)' },
+            { label: 'Wet Concrete Volume', value: '24.50 m³' },
+          ],
+          assumptions: [
+            { label: 'Compaction Factor', value: '0.92 per ACI 309' },
+          ],
+        },
+      },
+      {
+        id: `sample_${Date.now()}_2`,
+        toolId: 'rebar-weight',
+        toolName: 'Rebar Weight & BBS Helper',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        summary: '1,850.5 kg',
+        result: {
+          title: 'Column & Beam Reinforcement Schedule',
+          primaryValue: '1,850.5',
+          primaryUnit: 'kg',
+          primaryCategory: 'mass',
+          primaryRawValue: 1850.5,
+          secondaryValues: [
+            { label: 'Metric Tonnes', value: '1.851 Tonnes' },
+            { label: 'Total Bar Length', value: '1,170.0 m' },
+            { label: 'Estimated Cost', value: `${settings.currencySymbol} 175,800` },
+          ],
+          breakdown: [
+            { step: '1. 16mm Main Longitudinal Bars', expression: '60 bars × 12m × 1.579 kg/m', result: '1,136.9 kg' },
+            { step: '2. 10mm Stirrups / Ties', expression: '360 ties × 1.95m × 0.617 kg/m', result: '433.1 kg' },
+            { step: '3. 12mm Secondary Dist. Bars', expression: '32 bars × 9.8m × 0.888 kg/m', result: '280.5 kg' },
+          ],
+          formula: 'Weight = (D² / 162.2) × Length × Quantity',
+          substitutedFormula: 'W = Σ(UnitWeight × Length × Qty) = 1,850.5 kg',
+          inputsSummary: [
+            { label: 'Steel Grade', value: '500W (Grade 72.5 / 500 MPa)' },
+            { label: 'Bar Diameters', value: '16mm, 12mm, 10mm' },
+          ],
+          assumptions: [
+            { label: 'Density', value: '7,850 kg/m³ per ASTM A615 / BDS 1313' },
+          ],
+        },
+      },
+      {
+        id: `sample_${Date.now()}_3`,
+        toolId: 'brickwork',
+        toolName: 'Brick Masonry Calculator',
+        timestamp: new Date(Date.now() - 1800000).toISOString(),
+        summary: '12,250 Pcs',
+        result: {
+          title: '10" Exterior Brickwork Wall',
+          primaryValue: '12,250',
+          primaryUnit: 'Bricks',
+          primaryCategory: 'count',
+          primaryRawValue: 12250,
+          secondaryValues: [
+            { label: 'Total Wall Volume', value: '24.50 m³' },
+            { label: 'Dry Mortar Volume', value: '6.13 m³' },
+            { label: 'Cement Required', value: '28.5 Bags (50 kg)' },
+            { label: 'Sand Required', value: '216.5 CFT' },
+            { label: 'Estimated Cost', value: `${settings.currencySymbol} 153,125` },
+          ],
+          breakdown: [
+            { step: '1. Gross Wall Volume', expression: '49m length × 2.0m height × 0.25m thickness', result: '24.50 m³' },
+            { step: '2. Brick Demand (500/m³)', expression: '24.50 m³ × 500 bricks/m³', result: '12,250 Bricks' },
+            { step: '3. Mortar 1:6 Ratio', expression: '24.50 m³ × 0.25 dry factor', result: '6.13 m³ dry mortar' },
+          ],
+          formula: 'Bricks = Wall Volume (m³) × 500 bricks/m³',
+          substitutedFormula: 'Bricks = 24.50 × 500 = 12,250 bricks',
+          inputsSummary: [
+            { label: 'Wall Thickness', value: '10 inch (250 mm)' },
+            { label: 'Mortar Ratio', value: '1:6 (Cement : Sand)' },
+          ],
+          assumptions: [
+            { label: 'Standard Modular Brick', value: '240mm × 115mm × 70mm with 12mm mortar joints' },
+          ],
+        },
+      },
+      {
+        id: `sample_${Date.now()}_4`,
+        toolId: 'earthwork',
+        toolName: 'Earthwork Calculator',
+        timestamp: new Date(Date.now() - 900000).toISOString(),
+        summary: '85.00 m³',
+        result: {
+          title: 'Foundation Trench & Column Footing Excavation',
+          primaryValue: '85.00',
+          primaryUnit: 'm³',
+          primaryCategory: 'volume',
+          primaryRawValue: 85.0,
+          secondaryValues: [
+            { label: 'Volume in CFT', value: '3,001.7 CFT' },
+            { label: 'Loose Swell Volume (+20%)', value: '102.00 m³' },
+            { label: 'Estimated Dump Haul Trips', value: '18 Trips (6 m³ tipper)' },
+            { label: 'Estimated Cost', value: `${settings.currencySymbol} 15,300` },
+          ],
+          breakdown: [
+            { step: '1. 12 Footing Pits (2m × 2m × 1.5m)', expression: '12 × (2 × 2 × 1.5)', result: '72.00 m³' },
+            { step: '2. Grade Beam Trenches', expression: '26m × 0.5m × 1.0m', result: '13.00 m³' },
+          ],
+          formula: 'Volume = Length × Width × Depth',
+          substitutedFormula: 'V = 72.00 + 13.00 = 85.00 m³',
+          inputsSummary: [
+            { label: 'Soil Type', value: 'Medium Sandy Silt / Clay' },
+            { label: 'Swell Bulking Factor', value: '20%' },
+          ],
+          assumptions: [
+            { label: 'Over-excavation Margin', value: 'Includes 150mm side working space for shuttering' },
+          ],
+        },
+      },
+    ];
+
+    setHistory(prev => [...sampleItems, ...prev]);
+  };
+
   // Central Navigation handler with local tool analytics
   const handleNavigate = (viewId: string) => {
     setActiveView(viewId);
@@ -346,6 +492,7 @@ export default function App() {
             onOpenDisclaimer={() => setIsDisclaimerOpen(true)}
             onOpenHistory={() => setIsHistoryOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenProfile={() => setIsUserProfileOpen(true)}
           />
 
           {/* Content Viewport: Independently Scrollable Main Canvas */}
@@ -400,6 +547,10 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 history={history}
                 onOpenHistory={() => setIsHistoryOpen(true)}
+                activeProject={activeProject}
+                onOpenProjectWorkspace={() => setIsProjectWorkspaceOpen(true)}
+                onAddSampleCalculations={handleAddSampleCalculations}
+                settings={settings}
               />
             )}
 
@@ -411,6 +562,10 @@ export default function App() {
                 history={history}
                 onOpenHistory={() => setIsHistoryOpen(true)}
                 initialShowFavorites={true}
+                activeProject={activeProject}
+                onOpenProjectWorkspace={() => setIsProjectWorkspaceOpen(true)}
+                onAddSampleCalculations={handleAddSampleCalculations}
+                settings={settings}
               />
             )}
 
@@ -617,6 +772,18 @@ export default function App() {
           onClose={() => setIsSettingsOpen(false)}
           settings={settings}
           onUpdateSettings={setSettings}
+        />
+
+        {/* User Profile Account Modal (Tailored for site engineers & students) */}
+        <UserProfileModal
+          isOpen={isUserProfileOpen}
+          onClose={() => setIsUserProfileOpen(false)}
+          onProfileUpdated={(updatedProfile) => {
+            setSettings(prev => ({
+              ...prev,
+              userProfile: updatedProfile,
+            }));
+          }}
         />
 
         {/* Engineering Disclaimer Modal */}

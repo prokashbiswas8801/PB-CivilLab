@@ -5,8 +5,8 @@ import {defineConfig} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig(({ command }) => {
-  // Configured base path for GitHub Pages (/PB-CivilLab/) with environment override support
-  const basePath = process.env.BASE_PATH || (command === 'build' ? '/PB-CivilLab/' : '/');
+  // Configured base path for GitHub Pages with environment override support (defaults to '/')
+  const basePath = process.env.BASE_PATH || '/';
 
   return {
     base: basePath,
